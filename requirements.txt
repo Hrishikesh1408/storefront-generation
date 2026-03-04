@@ -1,0 +1,7 @@
+pymongo
+python-dotenv
+# fastapi
+# google-auth
+# google-auth-oauthlib
+# uvicorn
+# python-jose
