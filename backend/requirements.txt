@@ -1,7 +1,7 @@
-pymongo
+pymongo[srv]==3.12
 python-dotenv
-# fastapi
+fastapi
 # google-auth
 # google-auth-oauthlib
-# uvicorn
+uvicorn
 # python-jose
