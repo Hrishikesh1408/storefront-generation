@@ -1,8 +1,28 @@
 import Image from "next/image"
 import Link from "next/link"
 import logo from "@/src/assets/images/newturbifylogo.png"
+import { GoogleLogin } from "@react-oauth/google";
+import GoogleLoginButton from "@/src/components/auth/GoogleLoginButton";
 
 export default function Page() {
+
+  const handleSuccess = async (credentialResponse: any) => {
+
+    const token = credentialResponse.credential;
+
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await res.json();
+
+    console.log(data);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       
@@ -35,10 +55,8 @@ export default function Page() {
           </div>
 
           <div className="p-8">
-            <button className="w-full my-4 bg-[#0039A7] text-white py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300">
-              Sign Up with Google
-            </button>
-            <p className="text-sm text-gray-600 text-center">
+            <GoogleLoginButton />
+            <p className="text-sm text-gray-600 text-center mt-4">
               Already have an account?{" "}
               <Link href="/signin" className="text-blue-600 hover:underline">
                 Sign In

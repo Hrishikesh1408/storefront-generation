@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 __pycache__/
-*.pyc
+*.py[cod]
 
 # dependencies
 /node_modules
@@ -41,6 +41,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local env files and Python virtual environment
 /backend/.env
 /backend/venv/
 /backend/__pycache__/
@@ -48,4 +50,4 @@ next-env.d.ts
 /backend/routers/__pycache__/
 /backend/models/__pycache__/
 /backend/services/__pycache__/
-/backend/requirements.txt
+.env.local
