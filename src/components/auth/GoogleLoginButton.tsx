@@ -1,8 +1,11 @@
 "use client";
 
 import { GoogleLogin } from "@react-oauth/google";
+import { useRouter } from "next/navigation";
 
 export default function GoogleLoginButton() {
+
+  const router = useRouter();
 
   const handleSuccess = async (credentialResponse: any) => {
 
@@ -18,6 +21,8 @@ export default function GoogleLoginButton() {
 
     const data = await res.json();
     console.log(data);
+
+    router.push("/merchant/dashboard");
   };
 
   return (
