@@ -9,6 +9,7 @@ def create_jwt(user):
     payload = {
         "user_id": str(user["_id"]),
         "email": user["email"],
+        "role": user["role"],
         "exp": datetime.now(timezone.utc) + timedelta(days=7)
     }
 

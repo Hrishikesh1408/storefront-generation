@@ -10,6 +10,7 @@ router = APIRouter()
 
 class GoogleToken(BaseModel):
     token: str
+    role: str  # "admin", "merchant", or "user"
 
 
 @router.post("/google")
@@ -20,12 +21,13 @@ async def google_login(data: GoogleToken):
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = find_or_create_user(user_data)
+    user = find_or_create_user(user_data, data.role)
 
     jwt_token = create_jwt(user)
 
     return {
         "token": jwt_token,
+        "role": user["role"],
         "user": {
             "id": str(user["_id"]),
             "email": user["email"],
