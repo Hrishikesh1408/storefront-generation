@@ -1,12 +1,13 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
 
-client = MongoClient(MONGO_URI)
+client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
 
 db = client["storefront"]
 

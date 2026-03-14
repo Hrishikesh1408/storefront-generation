@@ -20,58 +20,21 @@ export default function Page() {
 
       {/* Auth Container */}
       <main className="flex flex-1 items-center justify-center px-6">
-        <div className="w-full max-w-md bg-white rounded-xl shadow-md">
+        <div className="w-full max-w-md bg-white rounded-xl shadow-md border-gray">
 
           {/* Tabs */}
           <div className="flex border-b">
-            <Link
-              href="/admin/signin"
-              className="flex-1 text-center py-4 text-lg font-semibold text-gray-500 hover:text-black transition"
-            >
-              Admin
-            </Link>
-
-            <Link
-              href="/merchant/signin"
-              className="flex-1 text-center py-4 text-lg font-semibold text-gray-500 hover:text-black transition"
-            >
-              Merchant
-            </Link>
-
-            <Link
-              href="./signin"
-              className="flex-1 text-center py-4 text-lg font-semibold border-b-2 border-black"
-            >
-              User
-            </Link>
-          </div>
-          
-          {/* Tabs */}
-          <div className="flex border-b">
-            <Link
-              href="./signup"
-              className="flex-1 text-center py-4 text-lg font-semibold text-gray-500 hover:text-black transition"
-            >
-              Sign Up
-            </Link>
-
-            <Link
-              href="./signin"
-              className="flex-1 text-center py-4 text-lg font-semibold border-b-2 border-black"
+            <div
+              
+              className="flex-1 text-center py-4 text-lg font-semibold"
             >
               Sign In
-            </Link>
+            </div>
           </div>
 
           {/* Form Area */}
           <div className="p-8">
             <GoogleLoginButton role="user"/>
-            <p className="text-sm text-gray-600 text-center mt-4">
-              Don't have an account?{" "}
-              <Link href="./signup" className="text-blue-600 hover:underline">
-                Sign Up
-              </Link>
-            </p>
           </div>
 
         </div>
