@@ -9,9 +9,9 @@ app.include_router(admin_router)
 
 app.include_router(auth_router, prefix="/auth")
 @app.get("/")
-def test_db():
+async def test_db():
 
-    users_collection.insert_one({
+    await users_collection.insert_one({
         "name": "test_user"
     })
 
