@@ -34,7 +34,7 @@ export default function Page() {
 
           {/* Form Area */}
           <div className="p-8">
-            <GoogleLoginButton role="user"/>
+            <GoogleLoginButton />
           </div>
 
         </div>
