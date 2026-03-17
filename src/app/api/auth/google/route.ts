@@ -27,11 +27,18 @@ export async function POST(req: Request) {
 
     const res = NextResponse.json({
       user: data.user,
-      role: data.role
+      role: data.user.role
     });
 
     res.cookies.set("token", data.token, {
       httpOnly: true,
+      secure: false,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    res.cookies.set("role", data.user.role, {
+      httpOnly: false, // frontend needs access
       secure: false,
       path: "/",
       maxAge: 60 * 60 * 24 * 7

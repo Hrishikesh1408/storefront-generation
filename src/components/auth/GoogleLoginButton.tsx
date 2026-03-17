@@ -3,11 +3,7 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
 
-type GoogleLoginButtonProps = {
-  role: "admin" | "merchant" | "user";
-};
-
-export default function GoogleLoginButton({ role }: GoogleLoginButtonProps) {
+export default function GoogleLoginButton() {
 
   const router = useRouter();
 
@@ -20,13 +16,13 @@ export default function GoogleLoginButton({ role }: GoogleLoginButtonProps) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ token, role })
+      body: JSON.stringify({ token })
     });
 
     const data = await res.json();
     console.log(data);
 
-    router.push(`/${data.role}/dashboard`);
+    router.push(`/${data.user.role}/dashboard`);
   };
 
   return (

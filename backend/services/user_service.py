@@ -4,7 +4,7 @@ from models.user_model import create_user_document
 users_collection = db["users"]
 
 
-async def find_or_create_user(user_data, role):
+async def find_or_create_user(user_data):
 
     user = await users_collection.find_one({
         "google_id": user_data["google_id"]
@@ -14,7 +14,7 @@ async def find_or_create_user(user_data, role):
         return user
 
     new_user = create_user_document(user_data)
-    new_user["role"] = role
+    new_user["role"] = "user"
 
     result = await users_collection.insert_one(new_user)
 
