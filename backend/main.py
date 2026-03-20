@@ -2,10 +2,13 @@ from fastapi import FastAPI
 from db.mongo import users_collection
 from routes.auth import router as auth_router
 from routes.admin import router as admin_router
+from routes.store import router as store_router
 
 app = FastAPI()
 
 app.include_router(admin_router)
+
+app.include_router(store_router)
 
 app.include_router(auth_router, prefix="/auth")
 @app.get("/")

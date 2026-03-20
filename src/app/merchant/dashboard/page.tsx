@@ -1,20 +1,134 @@
-import Image from "next/image"
-import logo from "@/src/assets/images/newturbifylogo.png"
+"use client";
 
-function page() {
-    return ( 
-        <div className="min-h-screen bg-gray-100 flex flex-col">
-            {/* Header */}
-            <header className="h-20 flex items-center px-20">
-                <Image
-                    src={logo}
-                    alt="Turbify Logo"
-                    className="w-32 h-auto"
-                    priority
-                />
-            </header>
-        </div>
-    );
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import logo from "@/src/assets/images/newturbifylogo.png";
+
+export default function Page() {
+  const [store, setStore] = useState<any>(null);
+  const [storeName, setStoreName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingStore, setLoadingStore] = useState(true); // ✅ NEW
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+
+  // 🔹 Get existing store
+  useEffect(() => {
+    fetch("/api/store/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data._id) {
+          setStore(data);
+        }
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoadingStore(false)); // ✅ stop loading
+  }, []);
+
+  // 🔹 Create store
+  const handleCreate = async () => {
+    if (!storeName) return alert("Enter store name");
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/store/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            name: storeName,
+            category: category,
+            description: description,
+            logo: logoUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Something went wrong");
+      } else {
+        setStore(data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Request failed");
+    }
+
+    setLoading(false);
+  };
+
+  // ✅ prevent flicker
+  if (loadingStore) {
+    return <div className="p-10">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="h-20 flex items-center px-20 bg-white shadow">
+        <Image src={logo} alt="Logo" className="w-32" />
+      </header>
+
+      {/* Main */}
+      <main className="flex-1 px-20 py-10">
+        {!store ? (
+          <div className="bg-white p-6 rounded-xl w-[400px] shadow">
+            <h2 className="text-lg mb-4">Create Your Store</h2>
+
+            <input
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="Store name"
+                className="w-full border px-3 py-2 mb-3"
+            />
+
+            <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Category (e.g. Clothing, Tech)"
+                className="w-full border px-3 py-2 mb-3"
+            />
+
+            <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Store description"
+                className="w-full border px-3 py-2 mb-3"
+            />
+
+            <input
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="Logo URL (optional)"
+                className="w-full border px-3 py-2 mb-4"
+            />
+
+            <button
+                onClick={handleCreate}
+                className="w-full bg-black text-white py-2"
+                disabled={loading}
+            >
+                {loading ? "Creating..." : "Create Store"}
+            </button>
+            </div>
+        ) : (
+          <div>
+            <h1 className="text-2xl font-semibold mb-4">
+              {store.name}
+            </h1>
+
+            <p className="text-gray-600">
+              Store Status: {store.status}
+            </p>
+
+            {/* NEXT: Product Generation UI */}
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }
-
-export default page;
