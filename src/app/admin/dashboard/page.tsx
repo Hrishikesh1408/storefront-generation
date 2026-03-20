@@ -55,6 +55,10 @@ export default function Page() {
         setIsModalOpen(false);
     }
 
+    const handleRoleUpdate = (updatedUser: any) => {
+        setUserData(updatedUser);
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
 
@@ -146,6 +150,7 @@ export default function Page() {
                     user={selectedUser}
                     isOpen={isModalOpen}
                     onClose={closeModal}
+                    onSaveSuccess={handleRoleUpdate}
                 />
 
             </main>

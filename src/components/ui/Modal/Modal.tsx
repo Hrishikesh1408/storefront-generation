@@ -23,7 +23,7 @@ export default function Modal({ isOpen, onClose, onSave, title, children }: Moda
                     <span className="font-semibold">{title}</span>
 
                     {/* ✅ X BUTTON = SAVE */}
-                <button onClick={onSave ? onSave : onClose}>
+                <button onClick={onClose}>
                     ×
                 </button>
             </div>

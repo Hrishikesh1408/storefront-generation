@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const response = await fetch("http://127.0.0.1:8000/auth/google", {
+    const response = await fetch(`${process.env.FASTAPI_URL}/auth/google`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

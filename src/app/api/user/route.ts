@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   try {
 
     const response = await fetch(
-      `http://localhost:8000/admin/users/${encodeURIComponent(email)}`
+      `${process.env.FASTAPI_URL}/admin/users/${encodeURIComponent(email)}`
     );
 
     const data = await response.json();
