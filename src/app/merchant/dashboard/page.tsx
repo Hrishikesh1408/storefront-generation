@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import logo from "@/src/assets/images/newturbifylogo.png";
+import Button from "@/src/components/ui/Button/ButtonComponent";
 
 export default function Page() {
   const [store, setStore] = useState<any>(null);
@@ -18,7 +19,7 @@ export default function Page() {
     fetch("/api/store/me")
       .then(res => res.json())
       .then(data => {
-        if (data && data._id) {
+        if (data?._id) {
           setStore(data);
         }
       })
@@ -70,13 +71,13 @@ export default function Page() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <header className="h-20 flex items-center px-20 bg-white shadow">
-        <Image src={logo} alt="Logo" className="w-32" />
+        <Image src={logo} alt="Logo" className="w-32 h-auto" priority />
       </header>
 
       {/* Main */}
-      <main className="flex-1 px-20 py-10">
+      <main className="flex-1 flex items-center justify-center px-20 py-1">
         {!store ? (
-          <div className="bg-white p-6 rounded-xl w-[400px] shadow">
+          <div className="bg-white p-8 rounded-2xl w-[420px] shadow-lg">
             <h2 className="text-lg mb-4">Create Your Store</h2>
 
             <input
@@ -107,25 +108,39 @@ export default function Page() {
                 className="w-full border px-3 py-2 mb-4"
             />
 
-            <button
-                onClick={handleCreate}
-                className="w-full bg-black text-white py-2"
-                disabled={loading}
+            <Button
+              onClick={handleCreate}
+              className="w-full"
+              disabled={loading}
             >
-                {loading ? "Creating..." : "Create Store"}
-            </button>
-            </div>
+              {loading ? "Creating..." : "Create Store"}
+            </Button>
+          </div>
         ) : (
-          <div>
+          <div className="bg-white p-8 rounded-2xl w-[420px] shadow-lg">
             <h1 className="text-2xl font-semibold mb-4">
               {store.name}
             </h1>
 
             <p className="text-gray-600">
+              Category: {store.category}
+            </p>
+
+            <p className="text-gray-600">
+              Description: {store.description}
+            </p>
+
+            <p className="text-gray-600">
               Store Status: {store.status}
             </p>
 
-            {/* NEXT: Product Generation UI */}
+            <Button
+              onClick={() => alert("Product generation coming soon!")}
+              className="w-full mt-6"
+              disabled={loading}
+            >
+              {"Generate Product"}
+            </Button>
           </div>
         )}
       </main>
