@@ -17,6 +17,20 @@ class StoreCreate(BaseModel):
 
 @router.post("/store/create")
 async def create_store(data: StoreCreate, user=Depends(verify_jwt)):
+
+    allowed_categories = [
+        "clothing",
+        "electronics",
+        "home_decor",
+        "beauty",
+        "fitness",
+        "food_beverage",
+        "accessories",
+    ]
+
+    if data.category not in allowed_categories:
+        raise HTTPException(status_code=400, detail="Invalid category")
+
     if user["role"] != "merchant":
         raise HTTPException(status_code=403, detail="Not authorized")
 

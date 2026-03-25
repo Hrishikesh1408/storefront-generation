@@ -13,6 +13,15 @@ export default function Page() {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const StoreCategories = [
+  {label:"Clothing", value: "clothing"},
+  {label:"Electronics", value: "electronics"},
+  {label:"Home Decor", value: "home_decor"},
+  {label:"Beauty", value: "beauty"},
+  {label:"Fitness", value: "fitness"},
+  {label:"Food & Beverage", value: "food_beverage"},
+  {label:"Accessories", value: "accessories"},
+  ];
 
   useEffect(() => {
     fetch("/api/store/me")
@@ -29,6 +38,7 @@ export default function Page() {
   // 🔹 Create store
   const handleCreate = async () => {
     if (!storeName) return alert("Enter store name");
+    if (!category) return alert("Select category");
 
     setLoading(true);
 
@@ -86,12 +96,18 @@ export default function Page() {
                 className="w-full border px-3 py-2 mb-3"
             />
 
-            <input
+            <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Category (e.g. Clothing, Tech)"
+                onChange={(e) => setCategory(e.target.value)} 
                 className="w-full border px-3 py-2 mb-3"
-            />
+            >
+                <option value="">Select category</option> 
+                {StoreCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                    </option>
+                ))}
+            </select>
 
             <textarea
                 value={description}
