@@ -9,12 +9,11 @@ export default function Page() {
   const [store, setStore] = useState<any>(null);
   const [storeName, setStoreName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStore, setLoadingStore] = useState(true); // ✅ NEW
+  const [loadingStore, setLoadingStore] = useState(true);
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
 
-  // 🔹 Get existing store
   useEffect(() => {
     fetch("/api/store/me")
       .then(res => res.json())
@@ -24,7 +23,7 @@ export default function Page() {
         }
       })
       .catch(err => console.error(err))
-      .finally(() => setLoadingStore(false)); // ✅ stop loading
+      .finally(() => setLoadingStore(false));
   }, []);
 
   // 🔹 Create store

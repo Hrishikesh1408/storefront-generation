@@ -9,7 +9,7 @@ def create_store_document(user_id: str, data: dict):
         "name": data["name"],
         "category": data.get("category"),
         "description": data.get("description"),
-        "logo": data.get("logo"),  # can be URL later
+        "logo": data.get("logo"),
         "owner_id": ObjectId(user_id),
         "status": "draft",
         "created_at": now,

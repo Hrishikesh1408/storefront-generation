@@ -12,7 +12,7 @@ class StoreCreate(BaseModel):
     name: str
     category: str = None
     description: str = None
-    logo: Optional[str] = None  # can be URL later
+    logo: Optional[str] = None
 
 
 @router.post("/store/create")
@@ -22,7 +22,7 @@ async def create_store(data: StoreCreate, user=Depends(verify_jwt)):
 
     store = await find_or_create_store(
         user["user_id"],
-        data.model_dump()   # ✅ correct
+        data.model_dump()
     )
 
     return store

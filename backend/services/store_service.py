@@ -12,7 +12,7 @@ async def find_or_create_store(user_id: str, data: dict):
 
     if store:
         store["_id"] = str(store["_id"])
-        store["owner_id"] = str(store["owner_id"])   # ✅ ADD THIS
+        store["owner_id"] = str(store["owner_id"])
         return store
 
     new_store = create_store_document(user_id, data)
@@ -20,7 +20,7 @@ async def find_or_create_store(user_id: str, data: dict):
     result = await store_collection.insert_one(new_store)
 
     new_store["_id"] = str(result.inserted_id)
-    new_store["owner_id"] = str(new_store["owner_id"])  # ✅ ADD THIS
+    new_store["owner_id"] = str(new_store["owner_id"])
 
     return new_store
 
@@ -31,6 +31,6 @@ async def get_store_by_user(user_id: str):
 
     if store:
         store["_id"] = str(store["_id"])
-        store["owner_id"] = str(store["owner_id"])   # ✅ ADD THIS
+        store["owner_id"] = str(store["owner_id"])
 
     return store

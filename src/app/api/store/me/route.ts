@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    // ✅ get token from cookies
     const token = req.cookies.get("token")?.value;
 
     const response = await fetch(`${process.env.FASTAPI_URL}/store/me`, {
@@ -12,7 +11,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // 🔴 handle backend errors
+
     if (!response.ok) {
       const text = await response.text();
       console.error("FastAPI error:", text);

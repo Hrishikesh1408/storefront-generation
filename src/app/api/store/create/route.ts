@@ -4,7 +4,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // ✅ get token from cookies
     const token = req.cookies.get("token")?.value;
 
     const response = await fetch(`${process.env.FASTAPI_URL}/store/create`, {
@@ -16,13 +15,12 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    // 🔴 handle backend errors
     if (!response.ok) {
       const text = await response.text();
       console.error("FastAPI error:", text);
 
       return NextResponse.json(
-    { error: text },   // 👈 show actual backend error
+    { error: text },
     { status: response.status }
   );
     }

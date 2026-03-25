@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import { useState } from "react";
@@ -9,152 +9,156 @@ import UserRoleModal from "@/src/components/admin/UserRoleModal";
 
 export default function Page() {
 
-    const [email, setEmail] = useState("");
-    const [showTable, setShowTable] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [userData, setUserData] = useState<any>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [email, setEmail] = useState("");
+  const [showTable, setShowTable] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
-    const handleSearch = async () => {
+  const handleSearch = async () => {
 
-        if (!email) return;
+    if (!email) return;
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
+    try {
 
-            const res = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
 
-            if (!res.ok) {
-                throw new Error("User not found");
-            }
+      if (!res.ok) {
+        throw new Error("User not found");
+      }
 
-            const data = await res.json();
+      const data = await res.json();
 
-            setUserData(data);
-            setShowTable(true);
+      setUserData(data);
+      setShowTable(true);
 
-        } catch (err) {
-            console.error("Error fetching user data:", err);
-            setUserData(null);
-            setShowTable(false);
-        } finally {
-            setLoading(false);
-        }
-
-    };
-
-    const openModal = (user: any) => {
-        setSelectedUser(user);
-        setIsModalOpen(true);
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      setUserData(null);
+      setShowTable(false);
+    } finally {
+      setLoading(false);
     }
 
-    const closeModal = () => {
-        setSelectedUser(null);
-        setIsModalOpen(false);
-    }
+  };
 
-    const handleRoleUpdate = (updatedUser: any) => {
-        setUserData(updatedUser);
-    };
+  const openModal = (user: any) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
 
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
+  const closeModal = () => {
+    setSelectedUser(null);
+    setIsModalOpen(false);
+  };
 
-            {/* Header */}
-            <header className="h-20 flex items-center px-20">
-                <Image
-                src={logo}
-                alt="Turbify Logo"
-                className="w-32 h-auto"
-                priority
-                />
-            </header>
+  const handleRoleUpdate = (updatedUser: any) => {
+    setUserData(updatedUser);
+  };
 
-            <main className="flex flex-col py-10 mx-15 px-5 bg-white">
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
 
-                <div>
+      {/* Header */}
+      <header className="h-20 flex items-center px-20">
+        <Image
+          src={logo}
+          alt="Turbify Logo"
+          className="w-32 h-auto"
+          priority
+        />
+      </header>
 
-                    <div
-                        id="EmailContainer"
-                        className="flex gap-4 mb-6"
-                    >
+      <main className="flex flex-col py-10 mx-15 px-5 bg-white">
 
-                        <Input
-                            name="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Search user by email"
-                            size="sm"
-                            clearable
-                            onClear={() => {
-                                setEmail("");
-                                setShowTable(false);
-                                setUserData(null);
-                            }}  
-                        />
+        <div>
 
-                        <Button onClick={handleSearch} type="submit" size="sm">
-                            Search
-                        </Button>
+          <div
+            id="EmailContainer"
+            className="flex gap-4 mb-6"
+          >
 
-                    </div>
+            <Input
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Search user by email"
+              size="sm"
+              clearable
+              onClear={() => {
+                setEmail("");
+                setShowTable(false);
+                setUserData(null);
+              }}
+            />
 
-                </div>
+            <Button onClick={handleSearch} type="submit" size="sm">
+              Search
+            </Button>
 
-                {showTable && userData && (
-            
-                <div className="overflow-x-auto">
-                    <table className="w-full table-fixed text-xs border border-gray-300">
-
-                        {/* ================= UPPER SUMMARY ================= */}
-
-                        <thead className="">
-
-                            <tr className="bg-gray-200 font-semibold">
-
-                                <th className="p-2 text-left">UID</th>
-                                <th className="p-2 text-left">Email/YID</th>
-                                <th className="p-2 text-left">Name</th>
-                                <th className="p-2 text-left">Role</th>
-                            </tr>
-                        </thead>
-                        <tbody className="">
-
-                            <tr className="bg-gray-50 border-t">
-
-                                <td className="p-2">
-                                    {userData?.id || "N/A"}
-                                </td>
-
-                                <td className="p-2">
-                                    {userData?.email || "N/A"}
-                                </td>
-
-                                <td className="p-2">
-                                    {userData?.name || "N/A"}
-                                </td>
-
-                                <td className="p-2">
-                                    <button onClick={() => openModal(userData)} className="text-blue-600 hover:text-blue-800">{userData?.role || "N/A"}</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>  
-                </div> 
-                )
-                }
-
-                <UserRoleModal
-                    user={selectedUser}
-                    isOpen={isModalOpen}
-                    onClose={closeModal}
-                    onSaveSuccess={handleRoleUpdate}
-                />
-
-            </main>
+          </div>
 
         </div>
-    );
+
+        {showTable && userData && (
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed text-xs border border-gray-300">
+
+              {/* ================= UPPER SUMMARY ================= */}
+
+              <thead className="">
+
+                <tr className="bg-gray-200 font-semibold">
+
+                  <th className="p-2 text-left">UID</th>
+                  <th className="p-2 text-left">Email/YID</th>
+                  <th className="p-2 text-left">Name</th>
+                  <th className="p-2 text-left">Role</th>
+                </tr>
+              </thead>
+              <tbody className="">
+
+                <tr className="bg-gray-50 border-t">
+
+                  <td className="p-2">
+                    {userData?.id || "N/A"}
+                  </td>
+
+                  <td className="p-2">
+                    {userData?.email || "N/A"}
+                  </td>
+
+                  <td className="p-2">
+                    {userData?.name || "N/A"}
+                  </td>
+
+                  <td className="p-2">
+                    <button
+                      onClick={() => openModal(userData)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      {userData?.role || "N/A"}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <UserRoleModal
+          user={selectedUser}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSaveSuccess={handleRoleUpdate}
+        />
+
+      </main>
+
+    </div>
+  );
 }
