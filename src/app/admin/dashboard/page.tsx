@@ -148,8 +148,13 @@ export default function Page() {
 
                     <td className="p-2">
                       <button
-                        onClick={() => openModal(user)}
-                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => user.role !== "admin" && openModal(user)}
+                        disabled={user.role === "admin"}
+                        className={`${
+                          user.role === "admin"
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-blue-600 hover:text-blue-800"
+                        }`}
                       >
                         {user.role || "N/A"}
                       </button>

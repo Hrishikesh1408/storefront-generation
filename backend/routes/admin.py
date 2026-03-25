@@ -74,7 +74,7 @@ async def update_role(req: UpdateRoleRequest):
     if not updated:
         raise HTTPException(
             status_code=400,
-            detail="User not found or invalid role"
+            detail="User not found or invalid role or cannot change admin role"
         )
 
     return {

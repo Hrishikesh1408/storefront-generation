@@ -75,7 +75,6 @@ export default function UserRoleModal({
           onChange={(e) => setSelectedRole(e.target.value)}
           className="w-full border p-2 rounded"
         >
-          <option value="admin">admin</option>
           <option value="merchant">merchant</option>
           <option value="user">user</option>
         </select>

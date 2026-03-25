@@ -24,11 +24,18 @@ async def find_or_create_user(user_data):
     return new_user
 
 
-# ✅ UPDATE ROLE SERVICE
 async def update_user_role(user_id: str, role: str):
 
-    # validate role
-    if role not in ["admin", "merchant", "user"]:
+
+    if role not in ["merchant", "user"]:
+        return False
+
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+
+    if not user:
+        return False
+    
+    if user.get("role") == "admin":
         return False
 
     result = await users_collection.update_one(
