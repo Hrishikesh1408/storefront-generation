@@ -5,19 +5,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get("email");
 
-  if (!email) {
-    return NextResponse.json(
-      { error: "Email is required" },
-      { status: 400 }
-    );
-  }
-
   try {
 
-    const response = await fetch(
-      `${process.env.FASTAPI_URL}/admin/users/${encodeURIComponent(email)}`
-    );
+    const url = email
+      ? `${process.env.FASTAPI_URL}/admin/users?email=${encodeURIComponent(email)}`
+      : `${process.env.FASTAPI_URL}/admin/users`;
 
+    const response = await fetch(url);
     const data = await response.json();
 
     return NextResponse.json(data);
@@ -25,10 +19,9 @@ export async function GET(req: Request) {
   } catch (error) {
 
     return NextResponse.json(
-      { error: "Failed to fetch user" },
+      { error: "Failed to fetch users" },
       { status: 500 }
     );
 
   }
-
 }

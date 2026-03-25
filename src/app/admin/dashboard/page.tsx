@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "@/src/assets/images/newturbifylogo.png";
 import Input from "@/src/components/ui/TextInput/InputComponent";
 import Button from "@/src/components/ui/Button/ButtonComponent";
@@ -10,41 +10,47 @@ import UserRoleModal from "@/src/components/admin/UserRoleModal";
 export default function Page() {
 
   const [email, setEmail] = useState("");
-  const [showTable, setShowTable] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const handleSearch = async () => {
-
-    if (!email) return;
+  // ================= FETCH USERS =================
+  const fetchUsers = async (email?: string) => {
 
     setLoading(true);
 
     try {
 
-      const res = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
+      const url = email
+        ? `/api/user?email=${encodeURIComponent(email)}`
+        : `/api/user`;
 
-      if (!res.ok) {
-        throw new Error("User not found");
-      }
-
+      const res = await fetch(url);
       const data = await res.json();
 
-      setUserData(data);
-      setShowTable(true);
+      setUsers(data.users || []);
 
     } catch (err) {
-      console.error("Error fetching user data:", err);
-      setUserData(null);
-      setShowTable(false);
+      console.error("Error fetching users:", err);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
-
   };
 
+  // ================= LOAD ON PAGE OPEN =================
+  useEffect(() => {
+    fetchUsers(); // 🔥 latest 10 users
+  }, []);
+
+  // ================= SEARCH =================
+  const handleSearch = () => {
+    fetchUsers(email);
+  };
+
+  // ================= MODAL =================
   const openModal = (user: any) => {
     setSelectedUser(user);
     setIsModalOpen(true);
@@ -55,14 +61,19 @@ export default function Page() {
     setIsModalOpen(false);
   };
 
+  // ================= UPDATE ROLE =================
   const handleRoleUpdate = (updatedUser: any) => {
-    setUserData(updatedUser);
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === updatedUser.id ? updatedUser : u
+      )
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
 
-      {/* Header */}
+      {/* ================= HEADER ================= */}
       <header className="h-20 flex items-center px-20">
         <Image
           src={logo}
@@ -72,84 +83,88 @@ export default function Page() {
         />
       </header>
 
+      {/* ================= MAIN ================= */}
       <main className="flex flex-col py-10 mx-15 px-5 bg-white">
 
-        <div>
+        {/* ================= SEARCH BAR ================= */}
+        <div className="flex gap-4 mb-6">
 
-          <div
-            id="EmailContainer"
-            className="flex gap-4 mb-6"
-          >
+          <Input
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Search user by email"
+            size="sm"
+            clearable
+            onClear={() => {
+              setEmail("");
+              fetchUsers(); // 🔥 reset to latest users
+            }}
+          />
 
-            <Input
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Search user by email"
-              size="sm"
-              clearable
-              onClear={() => {
-                setEmail("");
-                setShowTable(false);
-                setUserData(null);
-              }}
-            />
-
-            <Button onClick={handleSearch} type="submit" size="sm">
-              Search
-            </Button>
-
-          </div>
+          <Button onClick={handleSearch} size="sm">
+            Search
+          </Button>
 
         </div>
 
-        {showTable && userData && (
+        {/* ================= TABLE ================= */}
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed text-xs border border-gray-300">
 
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs border border-gray-300">
+            <thead>
+              <tr className="bg-gray-200 font-semibold">
+                <th className="p-2 text-left">UID</th>
+                <th className="p-2 text-left">Email</th>
+                <th className="p-2 text-left">Name</th>
+                <th className="p-2 text-left">Role</th>
+              </tr>
+            </thead>
 
-              {/* ================= UPPER SUMMARY ================= */}
+            <tbody>
 
-              <thead className="">
-
-                <tr className="bg-gray-200 font-semibold">
-
-                  <th className="p-2 text-left">UID</th>
-                  <th className="p-2 text-left">Email/YID</th>
-                  <th className="p-2 text-left">Name</th>
-                  <th className="p-2 text-left">Role</th>
-                </tr>
-              </thead>
-              <tbody className="">
-
-                <tr className="bg-gray-50 border-t">
-
-                  <td className="p-2">
-                    {userData?.id || "N/A"}
-                  </td>
-
-                  <td className="p-2">
-                    {userData?.email || "N/A"}
-                  </td>
-
-                  <td className="p-2">
-                    {userData?.name || "N/A"}
-                  </td>
-
-                  <td className="p-2">
-                    <button
-                      onClick={() => openModal(userData)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {userData?.role || "N/A"}
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center">
+                    Loading...
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    No users found
+                  </td>
+                </tr>
+              ) : (
 
+                users.map((user) => (
+                  <tr key={user.id} className="bg-gray-50 border-t">
+
+                    <td className="p-2">{user.id}</td>
+
+                    <td className="p-2">{user.email}</td>
+
+                    <td className="p-2">{user.name || "N/A"}</td>
+
+                    <td className="p-2">
+                      <button
+                        onClick={() => openModal(user)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        {user.role || "N/A"}
+                      </button>
+                    </td>
+
+                  </tr>
+                ))
+
+              )}
+
+            </tbody>
+          </table>
+        </div>
+
+        {/* ================= MODAL ================= */}
         <UserRoleModal
           user={selectedUser}
           isOpen={isModalOpen}
@@ -158,7 +173,6 @@ export default function Page() {
         />
 
       </main>
-
     </div>
   );
 }
