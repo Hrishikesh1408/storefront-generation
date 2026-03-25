@@ -14,26 +14,28 @@ export default function Page() {
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const StoreCategories = [
-  {label:"Clothing", value: "clothing"},
-  {label:"Electronics", value: "electronics"},
-  {label:"Home Decor", value: "home_decor"},
-  {label:"Beauty", value: "beauty"},
-  {label:"Fitness", value: "fitness"},
-  {label:"Food & Beverage", value: "food_beverage"},
-  {label:"Accessories", value: "accessories"},
+    { label: "Clothing", value: "clothing" },
+    { label: "Home Decor", value: "home_decor" },
+    { label: "Beauty", value: "beauty" },
+    { label: "Food & Beverage", value: "food_beverage" },
+    { label: "Bakery", value: "bakery" },
   ];
 
   useEffect(() => {
     fetch("/api/store/me")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data?._id) {
           setStore(data);
         }
       })
-      .catch(err => console.error(err))
+      .catch((err) => console.error(err))
       .finally(() => setLoadingStore(false));
   }, []);
+
+  const getCategoryLabel = (value: string) => {
+    return StoreCategories.find((cat) => cat.value === value)?.label || value;
+  };
 
   // 🔹 Create store
   const handleCreate = async () => {
@@ -49,10 +51,10 @@ export default function Page() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            name: storeName,
-            category: category,
-            description: description,
-            logo: logoUrl,
+          name: storeName,
+          category: category,
+          description: description,
+          logo: logoUrl,
         }),
       });
 
@@ -90,37 +92,37 @@ export default function Page() {
             <h2 className="text-lg mb-4">Create Your Store</h2>
 
             <input
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                placeholder="Store name"
-                className="w-full border px-3 py-2 mb-3"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="Store name"
+              className="w-full border px-3 py-2 mb-3"
             />
 
             <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)} 
-                className="w-full border px-3 py-2 mb-3"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full border px-3 py-2 mb-3"
             >
-                <option value="">Select category</option> 
-                {StoreCategories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                    </option>
-                ))}
+              <option value="">Select category</option>
+              {StoreCategories.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
             </select>
 
             <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Store description"
-                className="w-full border px-3 py-2 mb-3"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Store description"
+              className="w-full border px-3 py-2 mb-3"
             />
 
             <input
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="Logo URL (optional)"
-                className="w-full border px-3 py-2 mb-4"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="Logo URL (optional)"
+              className="w-full border px-3 py-2 mb-4"
             />
 
             <Button
@@ -133,21 +135,15 @@ export default function Page() {
           </div>
         ) : (
           <div className="bg-white p-8 rounded-2xl w-[420px] shadow-lg">
-            <h1 className="text-2xl font-semibold mb-4">
-              {store.name}
-            </h1>
+            <h1 className="text-2xl font-semibold mb-4">{store.name}</h1>
 
             <p className="text-gray-600">
-              Category: {store.category}
+              Category: {getCategoryLabel(store.category)}
             </p>
 
-            <p className="text-gray-600">
-              Description: {store.description}
-            </p>
+            <p className="text-gray-600">Description: {store.description}</p>
 
-            <p className="text-gray-600">
-              Store Status: {store.status}
-            </p>
+            <p className="text-gray-600">Store Status: {store.status}</p>
 
             <Button
               onClick={() => alert("Product generation coming soon!")}

@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   description: "Home page of storefront generation",
 };
 
+/**
+ * The root layout component wraps all pages in the application.
+ * It applies global fonts, CSS, and authentication providers (e.g. GoogleProvider).
+ *
+ * @param {Object} props - Layout properties.
+ * @param {React.ReactNode} props.children - The page components to be rendered inside the layout.
+ * @returns {JSX.Element} The root HTML document structure.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,9 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <GoogleProvider>
-          {children}
-        </GoogleProvider>
+        <GoogleProvider>{children}</GoogleProvider>
       </body>
     </html>
   );

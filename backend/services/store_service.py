@@ -1,14 +1,28 @@
+"""
+Store Operations Service.
+
+Handles database operations related to merchants' storefronts.
+"""
 from bson import ObjectId
+
 from db.mongo import db
 from models.store_model import create_store_document
 
 store_collection = db["stores"]
 
 
-async def find_or_create_store(user_id: str, data: dict):
-    store = await store_collection.find_one({
-        "owner_id": ObjectId(user_id)
-    })
+async def find_or_create_store(user_id: str, data: dict) -> dict:
+    """
+    Retrieves an existing store for a user or creates a new one if it doesn't exist.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        data (dict): Store configuration data.
+        
+    Returns:
+        dict: The store document with stringified ObjectIds.
+    """
+    store = await store_collection.find_one({"owner_id": ObjectId(user_id)})
 
     if store:
         store["_id"] = str(store["_id"])
@@ -24,10 +38,18 @@ async def find_or_create_store(user_id: str, data: dict):
 
     return new_store
 
-async def get_store_by_user(user_id: str):
-    store = await store_collection.find_one({
-        "owner_id": ObjectId(user_id)
-    })
+
+async def get_store_by_user(user_id: str) -> dict | None:
+    """
+    Retrieves a store by its owner's user ID.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        
+    Returns:
+        dict | None: The store document if found, None otherwise.
+    """
+    store = await store_collection.find_one({"owner_id": ObjectId(user_id)})
 
     if store:
         store["_id"] = str(store["_id"])

@@ -14,7 +14,6 @@ export default function UserRoleModal({
   onClose,
   onSaveSuccess,
 }: Props) {
-
   const [selectedRole, setSelectedRole] = useState("");
 
   useEffect(() => {
@@ -23,51 +22,56 @@ export default function UserRoleModal({
     }
   }, [user]);
 
-    const handleSave = async () => {
+  const handleSave = async () => {
     if (!user) return;
 
     try {
-        const res = await fetch("/api/admin/update-role", {
+      const res = await fetch("/api/admin/update-role", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            userId: user.id,
-            role: selectedRole,
+          userId: user.id,
+          role: selectedRole,
         }),
-        });
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok) {
+      if (!res.ok) {
         throw new Error(data.message || "Failed to update role");
-        }
+      }
 
-        onSaveSuccess({
+      onSaveSuccess({
         ...user,
         role: selectedRole,
-        });
+      });
 
-        onClose();
-
+      onClose();
     } catch (err: any) {
-        console.error(err);
-        alert(err.message);
+      console.error(err);
+      alert(err.message);
     }
-    };
-    if (!user) return null;
+  };
+  if (!user) return null;
 
-    return (
+  return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       onSave={handleSave}
       title="User Role"
     >
-      <p><b>Name:</b> {user.name}</p>
-      <p><b>Email:</b> {user.email}</p>
-      <p><b>Role:</b> {user.role}</p>
+      <p>
+        <b>Name:</b> {user.name}
+      </p>
+      <p>
+        <b>Email:</b> {user.email}
+      </p>
+      <p>
+        <b>Role:</b> {user.role}
+      </p>
 
       <div className="mt-4">
         <select

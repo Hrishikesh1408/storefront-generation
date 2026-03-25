@@ -2,18 +2,36 @@
 
 import { useState } from "react";
 
+/**
+ * Props for the Text Input component.
+ */
 interface InputProps {
+  /** Identifier and name for the input field */
   name: string;
+  /** Current value of the input */
   value: string;
+  /** Change event handler */
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Placeholder text */
   placeholder?: string;
+  /** The HTML type attribute (e.g., text, email, password) */
   type?: string;
+  /** Size variant of the input field */
   size?: "sm" | "md" | "lg";
+  /** Additional custom class names */
   className?: string;
+  /** Whether a clear 'x' button should be shown when it has a value */
   clearable?: boolean;
+  /** Optional callback triggered when the clear button is clicked */
   onClear?: () => void;
 }
 
+/**
+ * A reusable, accessible text input component with a clearable icon option.
+ *
+ * @param {InputProps} props - The properties for the Input component.
+ * @returns {JSX.Element} The rendered input field.
+ */
 export default function Input({
   name,
   value,
@@ -23,13 +41,12 @@ export default function Input({
   size = "md",
   className = "",
   clearable = false,
-  onClear
+  onClear,
 }: InputProps) {
-
   const sizeStyles = {
     sm: "px-3 py-2 text-sm",
     md: "px-4 py-3 text-base",
-    lg: "px-5 py-4 text-lg"
+    lg: "px-5 py-4 text-lg",
   };
 
   return (

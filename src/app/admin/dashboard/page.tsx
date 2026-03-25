@@ -8,7 +8,6 @@ import Button from "@/src/components/ui/Button/ButtonComponent";
 import UserRoleModal from "@/src/components/admin/UserRoleModal";
 
 export default function Page() {
-
   const [email, setEmail] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -18,11 +17,9 @@ export default function Page() {
 
   // ================= FETCH USERS =================
   const fetchUsers = async (email?: string) => {
-
     setLoading(true);
 
     try {
-
       const url = email
         ? `/api/user?email=${encodeURIComponent(email)}`
         : `/api/user`;
@@ -31,7 +28,6 @@ export default function Page() {
       const data = await res.json();
 
       setUsers(data.users || []);
-
     } catch (err) {
       console.error("Error fetching users:", err);
       setUsers([]);
@@ -64,31 +60,21 @@ export default function Page() {
   // ================= UPDATE ROLE =================
   const handleRoleUpdate = (updatedUser: any) => {
     setUsers((prev) =>
-      prev.map((u) =>
-        u.id === updatedUser.id ? updatedUser : u
-      )
+      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
     );
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-
       {/* ================= HEADER ================= */}
       <header className="h-20 flex items-center px-20">
-        <Image
-          src={logo}
-          alt="Turbify Logo"
-          className="w-32 h-auto"
-          priority
-        />
+        <Image src={logo} alt="Turbify Logo" className="w-32 h-auto" priority />
       </header>
 
       {/* ================= MAIN ================= */}
       <main className="flex flex-col py-10 mx-15 px-5 bg-white">
-
         {/* ================= SEARCH BAR ================= */}
         <div className="flex gap-4 mb-6">
-
           <Input
             name="email"
             value={email}
@@ -105,13 +91,11 @@ export default function Page() {
           <Button onClick={handleSearch} size="sm">
             Search
           </Button>
-
         </div>
 
         {/* ================= TABLE ================= */}
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-xs border border-gray-300">
-
             <thead>
               <tr className="bg-gray-200 font-semibold">
                 <th className="p-2 text-left">UID</th>
@@ -122,7 +106,6 @@ export default function Page() {
             </thead>
 
             <tbody>
-
               {loading ? (
                 <tr>
                   <td colSpan={4} className="p-4 text-center">
@@ -136,10 +119,8 @@ export default function Page() {
                   </td>
                 </tr>
               ) : (
-
                 users.map((user) => (
                   <tr key={user.id} className="bg-gray-50 border-t">
-
                     <td className="p-2">{user.id}</td>
 
                     <td className="p-2">{user.email}</td>
@@ -159,12 +140,9 @@ export default function Page() {
                         {user.role || "N/A"}
                       </button>
                     </td>
-
                   </tr>
                 ))
-
               )}
-
             </tbody>
           </table>
         </div>
@@ -176,7 +154,6 @@ export default function Page() {
           onClose={closeModal}
           onSaveSuccess={handleRoleUpdate}
         />
-
       </main>
     </div>
   );
