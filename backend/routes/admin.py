@@ -11,8 +11,22 @@ from pydantic import BaseModel
 
 from db.mongo import db
 from services.user_service import update_user_role
+from bson import ObjectId
 
 router = APIRouter()
+
+@router.get("/admin/store/{user_id}")
+async def get_user_store(user_id: str):
+    try:
+        store = await db["stores"].find_one({"owner_id": ObjectId(user_id)})
+        if not store:
+            return {"store": None}
+        
+        store["_id"] = str(store["_id"])
+        store["owner_id"] = str(store["owner_id"])
+        return {"store": store}
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
 
 
 @router.get("/admin/users/{email}")

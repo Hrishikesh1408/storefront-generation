@@ -28,7 +28,7 @@ def create_store_document(user_id: str, data: dict) -> dict:
         "description": data.get("description"),
         "logo": data.get("logo"),
         "owner_id": ObjectId(user_id),
-        "status": "draft",
+        "status": "deferred",
         "created_at": now,
         "updated_at": now,
     }

@@ -6,6 +6,7 @@ import logo from "@/src/assets/images/newturbifylogo.png";
 import Input from "@/src/components/ui/TextInput/InputComponent";
 import Button from "@/src/components/ui/Button/ButtonComponent";
 import UserRoleModal from "@/src/components/admin/UserRoleModal";
+import StoreDetailsModal from "@/src/components/admin/StoreDetailsModal";
 
 export default function Page() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,9 @@ export default function Page() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [selectedStoreUser, setSelectedStoreUser] = useState<any>(null);
 
   // ================= FETCH USERS =================
   const fetchUsers = async (email?: string) => {
@@ -55,6 +59,16 @@ export default function Page() {
   const closeModal = () => {
     setSelectedUser(null);
     setIsModalOpen(false);
+  };
+
+  const openStoreModal = (user: any) => {
+    setSelectedStoreUser(user);
+    setIsStoreModalOpen(true);
+  };
+
+  const closeStoreModal = () => {
+    setSelectedStoreUser(null);
+    setIsStoreModalOpen(false);
   };
 
   // ================= UPDATE ROLE =================
@@ -102,6 +116,7 @@ export default function Page() {
                 <th className="p-2 text-left">Email</th>
                 <th className="p-2 text-left">Name</th>
                 <th className="p-2 text-left">Role</th>
+                <th className="p-2 text-left w-24">Store</th>
               </tr>
             </thead>
 
@@ -131,14 +146,24 @@ export default function Page() {
                       <button
                         onClick={() => user.role !== "admin" && openModal(user)}
                         disabled={user.role === "admin"}
-                        className={`${
-                          user.role === "admin"
+                        className={`${user.role === "admin"
                             ? "text-gray-400 cursor-not-allowed"
                             : "text-blue-600 hover:text-blue-800"
-                        }`}
+                          }`}
                       >
                         {user.role || "N/A"}
                       </button>
+                    </td>
+
+                    <td className="p-2">
+                      {user.role === "merchant" && (
+                        <button
+                          onClick={() => openStoreModal(user)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          View Store
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -153,6 +178,12 @@ export default function Page() {
           isOpen={isModalOpen}
           onClose={closeModal}
           onSaveSuccess={handleRoleUpdate}
+        />
+
+        <StoreDetailsModal
+          userId={selectedStoreUser?.id || null}
+          isOpen={isStoreModalOpen}
+          onClose={closeStoreModal}
         />
       </main>
     </div>
