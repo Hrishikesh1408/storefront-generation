@@ -4,6 +4,8 @@ Main FastAPI Application Entrypoint.
 Registers routers, sets up the ASGI application, and provides a health check endpoint.
 """
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+import os
 
 from db.mongo import users_collection
 from routes.admin import router as admin_router
@@ -12,6 +14,9 @@ from routes.store import router as store_router
 from routes.product import router as product_router
 
 app = FastAPI(title="Storefront Generation API")
+
+os.makedirs("images", exist_ok=True)
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # Register feature-specific routers
 app.include_router(admin_router)
