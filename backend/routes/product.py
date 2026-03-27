@@ -20,7 +20,7 @@ class ManualProductRequest(BaseModel):
 async def generate_products_api(store_id: str):
     return await generate_products_for_store(store_id)
 
-@router.get("/store/{store_id}")
+@router.get("/products/{store_id}")
 async def get_store_products_api(store_id: str):
     return await get_products_by_store(store_id)
 

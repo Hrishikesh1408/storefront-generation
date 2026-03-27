@@ -11,14 +11,14 @@ export async function GET(req: NextRequest) {
 
     const token = req.cookies.get("token")?.value;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/store/${store_id}`, {
+    const response = await fetch(`${process.env.FASTAPI_URL}/products/${store_id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-        return NextResponse.json({ error: "Failed to fetch products" }, { status: response.status });
+      return NextResponse.json({ error: "Failed to fetch products" }, { status: response.status });
     }
 
     const data = await response.json();

@@ -10,6 +10,7 @@ export default function Page() {
   const [storeName, setStoreName] = useState("");
   const [loading, setLoading] = useState(false);
   const [generatingProducts, setGeneratingProducts] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [loadingStore, setLoadingStore] = useState(true);
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -99,6 +100,23 @@ export default function Page() {
     }
   };
 
+  // 🔹 Publish Store
+  const handlePublishStore = async () => {
+    setPublishing(true);
+    try {
+      const res = await fetch("/api/store/publish", { method: "POST" });
+      if (!res.ok) {
+        alert("Failed to publish store");
+      } else {
+        setStore((prev: any) => ({ ...prev, status: "active" }));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error publishing store");
+    }
+    setPublishing(false);
+  };
+
   // ✅ prevent flicker
   if (loadingStore) {
     return <div className="p-10">Loading...</div>;
@@ -167,10 +185,19 @@ export default function Page() {
 
             {store.status === "active" ? (
                 <Button
-                  onClick={() => alert("Publish Store functionality coming soon!")}
-                  className="w-full mt-6"
+                  className="w-full mt-6 opacity-70 cursor-not-allowed"
+                  disabled={true}
+                  onClick={() => {}}
                 >
-                  Publish Store
+                  Store is Active
+                </Button>
+            ) : store.status === "draft" ? (
+                <Button
+                  onClick={handlePublishStore}
+                  className="w-full mt-6"
+                  disabled={publishing}
+                >
+                  {publishing ? "Publishing..." : "Publish Store"}
                 </Button>
             ) : store.status === "pending" ? (
                 <Button

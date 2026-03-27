@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from services.jwt_service import verify_jwt
-from services.store_service import find_or_create_store, get_store_by_user
+from services.store_service import find_or_create_store, get_store_by_user, publish_store
 
 router = APIRouter()
 
@@ -54,3 +54,15 @@ async def get_my_store(user=Depends(verify_jwt)):
     """
     store = await get_store_by_user(user["user_id"])
     return store
+
+
+@router.post("/store/publish")
+async def publish_my_store(user=Depends(verify_jwt)):
+    """
+    Publishes the merchant's store, setting its status to 'active'.
+    """
+    success = await publish_store(user["user_id"])
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to publish store or store not found")
+    
+    return {"message": "Store published successfully"}

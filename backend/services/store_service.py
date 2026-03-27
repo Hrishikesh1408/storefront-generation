@@ -56,3 +56,21 @@ async def get_store_by_user(user_id: str) -> dict | None:
         store["owner_id"] = str(store["owner_id"])
 
     return store
+
+
+async def publish_store(user_id: str) -> bool:
+    """
+    Publishes a store by updating its status to 'active'.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        
+    Returns:
+        bool: True if updated successfully, False otherwise.
+    """
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id)},
+        {"$set": {"status": "active"}}
+    )
+    
+    return result.modified_count > 0

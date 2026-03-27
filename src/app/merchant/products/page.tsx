@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Button from "@/src/components/ui/Button/ButtonComponent";
+import ProductCardComponent from "@/src/components/layout/ProductCard/ProductCardComponent";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -130,7 +131,7 @@ export default function ProductsPage() {
         alert(data.error || "Failed to generate products");
       } else {
         await fetchProducts(store._id);
-        setStore((prev: any) => ({ ...prev, status: "active" }));
+        setStore((prev: any) => ({ ...prev, status: "draft" }));
       }
     } catch (err) {
       console.error(err);
@@ -168,29 +169,11 @@ export default function ProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {products.map((product) => (
-              <div key={product._id} className="bg-white p-4 rounded-xl shadow flex flex-col">
-                {product.image_url && (
-                  <Image
-                    src={product.image_url}
-                    alt={product.name}
-                    width={400}
-                    height={300}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                  />
-                )}
-                <h3 className="text-lg font-medium">{product.name}</h3>
-                <p className="text-gray-600 text-sm mt-1 mb-3 flex-1">{product.description}</p>
-                <div className="font-semibold text-lg mb-3">${product.price}</div>
-                <div className="flex items-center justify-between mt-auto border-t pt-3">
-                  <span className="text-sm font-medium text-gray-700">Display on Storefront</span>
-                  <input
-                    type="checkbox"
-                    checked={product.selected || false}
-                    onChange={() => toggleSelection(product._id, product.selected || false)}
-                    className="w-5 h-5 text-blue-600 rounded bg-gray-100 border-gray-300 cursor-pointer"
-                  />
-                </div>
-              </div>
+              <ProductCardComponent
+                key={product._id}
+                product={product}
+                toggleSelection={toggleSelection}
+              />
             ))}
           </div>
         )}

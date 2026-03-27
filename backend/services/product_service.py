@@ -81,10 +81,10 @@ async def generate_products_for_store(store_id: str):
     for p in final_products:
         p["store_id"] = str(p["store_id"])
 
-    # Update store status to active after successful generation
+    # Update store status to draft after successful generation
     await db["stores"].update_one(
         {"_id": ObjectId(store_id)},
-        {"$set": {"status": "active"}}
+        {"$set": {"status": "draft"}}
     )
 
     return final_products
@@ -122,10 +122,10 @@ async def add_manual_product(store_id: str, data: dict):
     product["_id"] = str(result.inserted_id)
     product["store_id"] = str(product["store_id"])
 
-    # Ensure store is marked active if user manually adds a product
+    # Ensure store is marked draft if user manually adds a product
     await db["stores"].update_one(
         {"_id": ObjectId(store_id)},
-        {"$set": {"status": "active"}}
+        {"$set": {"status": "draft"}}
     )
 
     return product
