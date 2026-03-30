@@ -1,53 +1,72 @@
-/**
- * Props for the Modal component.
- */
+"use client";
+
 type ModalProps = {
-  /** Controls the visibility of the modal */
   isOpen: boolean;
-  /** Callback fired when the modal requests to be closed */
   onClose: () => void;
-  /** Optional callback fired when explicitly saving (if applicable, though close is generic) */
   onSave?: () => void;
-  /** Title text displayed in the modal header */
   title: string;
-  /** Content to render inside the modal body */
   children: React.ReactNode;
+  size?: "sm" | "md" | "lg";
 };
 
-/**
- * A controlled, accessible modal dialog component used for overlays.
- *
- * @param {ModalProps} props - The properties for the Modal component.
- * @returns {JSX.Element | null} The rendered modal or null if not open.
- */
 export default function Modal({
   isOpen,
   onClose,
-  onSave,
   title,
   children,
+  size = "md",
 }: ModalProps) {
   if (!isOpen) return null;
+
+  const sizeStyles = {
+    sm: "max-w-sm",
+    md: "max-w-lg",
+    lg: "max-w-2xl",
+  };
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4
+                 bg-black/40 backdrop-blur-sm
+                 animate-fade-in"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-[600px] max-h-[80vh] rounded shadow-lg flex flex-col"
+        className={`
+          bg-white w-full ${sizeStyles[size]}
+          max-h-[85vh]
+          rounded-[var(--radius-lg)]
+          shadow-[var(--shadow-xl)]
+          flex flex-col
+          animate-scale-in
+          overflow-hidden
+        `}
       >
-        {/* HEADER */}
-        <div className="bg-blue-500 text-white px-4 py-3 flex justify-between">
-          <span className="font-semibold">{title}</span>
-
-          {/* Close trigger button */}
-          <button onClick={onClose}>×</button>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] 
+                       hover:text-[var(--text-primary)] hover:bg-[var(--neutral-100)]
+                       transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M5 5l10 10M15 5L5 15"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
         </div>
 
-        {/* BODY */}
-        <div className="p-4 overflow-auto text-sm">{children}</div>
+        {/* Body */}
+        <div className="p-6 overflow-auto">{children}</div>
       </div>
     </div>
   );

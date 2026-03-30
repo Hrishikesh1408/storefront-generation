@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Button from "@/src/components/ui/Button/ButtonComponent";
+import Input from "@/src/components/ui/TextInput/InputComponent";
+import Textarea from "@/src/components/ui/Textarea/TextareaComponent";
+import Modal from "@/src/components/ui/Modal/Modal";
+import EmptyState from "@/src/components/ui/EmptyState/EmptyState";
+import Spinner from "@/src/components/ui/Spinner/Spinner";
 import ProductCardComponent from "@/src/components/layout/ProductCard/ProductCardComponent";
 
 export default function ProductsPage() {
@@ -14,7 +18,6 @@ export default function ProductsPage() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Manual Product State
   const [manualName, setManualName] = useState("");
   const [manualDesc, setManualDesc] = useState("");
   const [manualPrice, setManualPrice] = useState("");
@@ -52,53 +55,39 @@ export default function ProductsPage() {
   };
 
   const toggleSelection = async (productId: string, currentStatus: boolean) => {
-    // Optimistic update
     setProducts((prev) =>
-      prev.map((p) =>
-        p._id === productId ? { ...p, selected: !currentStatus } : p
-      )
+      prev.map((p) => (p._id === productId ? { ...p, selected: !currentStatus } : p))
     );
-
     try {
       const res = await fetch(`/api/product/${productId}/select`, { method: "PATCH" });
       if (!res.ok) {
-        // Revert on failure
         setProducts((prev) =>
-          prev.map((p) =>
-            p._id === productId ? { ...p, selected: currentStatus } : p
-          )
+          prev.map((p) => (p._id === productId ? { ...p, selected: currentStatus } : p))
         );
       }
     } catch (err) {
       console.error(err);
-      // Revert on failure
       setProducts((prev) =>
-        prev.map((p) =>
-          p._id === productId ? { ...p, selected: currentStatus } : p
-        )
+        prev.map((p) => (p._id === productId ? { ...p, selected: currentStatus } : p))
       );
     }
   };
 
   const handleManualAdd = async () => {
     if (!manualName || !manualPrice) return alert("Name and price are required");
-
     setSubmitting(true);
     try {
-      const payload = {
-        store_id: store._id,
-        name: manualName,
-        description: manualDesc,
-        price: parseFloat(manualPrice),
-        image_url: manualImage
-      };
-
       const res = await fetch("/api/product/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          store_id: store._id,
+          name: manualName,
+          description: manualDesc,
+          price: parseFloat(manualPrice),
+          image_url: manualImage,
+        }),
       });
-
       if (res.ok) {
         const newProduct = await res.json();
         setProducts([...products, newProduct]);
@@ -120,12 +109,10 @@ export default function ProductsPage() {
   const handleGenerateProducts = async () => {
     if (!store?._id) return;
     setGeneratingProducts(true);
-
     try {
       const res = await fetch(`/api/product/generate?store_id=${store._id}`, {
         method: "POST",
       });
-
       if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Failed to generate products");
@@ -137,37 +124,55 @@ export default function ProductsPage() {
       console.error(err);
       alert("Request failed");
     }
-
     setGeneratingProducts(false);
   };
 
   if (loadingStore) {
-    return <div className="p-10 text-center mt-20">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">{store?.name} Products</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Custom Product</Button>
+    <div className="p-4 md:p-8 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            {store?.name} Products
+          </h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {products.length} product{products.length !== 1 ? "s" : ""} total
+          </p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Add Product
+        </Button>
       </div>
 
+      {/* Products Grid */}
       <main>
         {loadingProducts ? (
-          <div className="text-center">Loading products...</div>
+          <div className="py-20">
+            <Spinner size="lg" />
+          </div>
         ) : products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow mt-10 border border-dashed border-gray-300">
-            <p className="text-gray-500 mb-6 text-lg">No products found. Start building your storefront by generating products.</p>
-            <Button
-              onClick={handleGenerateProducts}
-              disabled={generatingProducts}
-              className="px-8 py-3"
-            >
-              {generatingProducts ? "Generating Products..." : "Generate Products"}
-            </Button>
+          <div className="bg-white rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)] shadow-[var(--shadow-sm)]">
+            <EmptyState
+              title="No products yet"
+              description="Generate AI-powered products or add them manually to start building your storefront."
+              actionLabel={generatingProducts ? "Generating..." : "Generate Products"}
+              onAction={handleGenerateProducts}
+              loading={generatingProducts}
+            />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {products.map((product) => (
               <ProductCardComponent
                 key={product._id}
@@ -179,53 +184,59 @@ export default function ProductsPage() {
         )}
       </main>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-2xl w-[90%] max-w-[400px]">
-            <h2 className="text-xl font-bold mb-6">Add Custom Product</h2>
+      {/* Add Product Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add Custom Product"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <Input
+            name="productName"
+            value={manualName}
+            onChange={(e) => setManualName(e.target.value)}
+            placeholder="e.g. Premium Cotton T-Shirt"
+            label="Product Name"
+          />
+          <Textarea
+            name="productDesc"
+            value={manualDesc}
+            onChange={(e) => setManualDesc(e.target.value)}
+            placeholder="Describe your product..."
+            label="Description (optional)"
+            rows={3}
+          />
+          <Input
+            name="productPrice"
+            value={manualPrice}
+            onChange={(e) => setManualPrice(e.target.value)}
+            placeholder="29.99"
+            type="number"
+            label="Price ($)"
+          />
+          <Input
+            name="productImage"
+            value={manualImage}
+            onChange={(e) => setManualImage(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            label="Image URL (optional)"
+          />
 
-            <input
-              value={manualName}
-              onChange={(e) => setManualName(e.target.value)}
-              placeholder="Product Name"
-              className="w-full border px-3 py-2 mb-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <textarea
-              value={manualDesc}
-              onChange={(e) => setManualDesc(e.target.value)}
-              placeholder="Description (Optional)"
-              className="w-full border px-3 py-2 mb-4 rounded-lg h-24 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <input
-              type="number"
-              value={manualPrice}
-              onChange={(e) => setManualPrice(e.target.value)}
-              placeholder="Price"
-              className="w-full border px-3 py-2 mb-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <input
-              value={manualImage}
-              onChange={(e) => setManualImage(e.target.value)}
-              placeholder="Image URL (optional)"
-              className="w-full border px-3 py-2 mb-6 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-
-            <div className="flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                onClick={() => setIsModalOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <Button onClick={handleManualAdd} disabled={submitting}>
-                {submitting ? "Adding..." : "Add Product"}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setIsModalOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleManualAdd} loading={submitting}>
+              Add Product
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

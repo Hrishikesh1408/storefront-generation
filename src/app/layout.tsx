@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import GoogleProvider from "../components/providers/GoogleProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -14,18 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Home Page",
-  description: "Home page of storefront generation",
+  title: "Turbify — AI-Powered Storefront Generation",
+  description:
+    "Create and manage your AI-powered storefront with Turbify. Generate products, customize your store, and go live in minutes.",
 };
 
-/**
- * The root layout component wraps all pages in the application.
- * It applies global fonts, CSS, and authentication providers (e.g. GoogleProvider).
- *
- * @param {Object} props - Layout properties.
- * @param {React.ReactNode} props.children - The page components to be rendered inside the layout.
- * @returns {JSX.Element} The root HTML document structure.
- */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,9 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <GoogleProvider>{children}</GoogleProvider>
       </body>
     </html>
