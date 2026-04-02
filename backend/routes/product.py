@@ -1,13 +1,20 @@
-from fastapi import APIRouter
+"""
+Product Routes.
+
+Endpoints for product operations.
+"""
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
 from services.product_service import (
-    generate_products_for_store,
-    get_products_by_store,
-    toggle_product_selection,
-    add_manual_product
+    get_products_by_category,
+    get_store_selected_products,
+    add_manual_product,
 )
+from services.jwt_service import verify_jwt
 
 router = APIRouter()
+
 
 class ManualProductRequest(BaseModel):
     store_id: str
@@ -16,18 +23,22 @@ class ManualProductRequest(BaseModel):
     price: float
     image_url: str = ""
 
-@router.post("/generate-products")
-async def generate_products_api(store_id: str):
-    return await generate_products_for_store(store_id)
 
-@router.get("/products/{store_id}")
+@router.get("/products/by-category/{category}")
+async def get_category_products_api(category: str):
+    """Returns all products for a given category."""
+    products = await get_products_by_category(category)
+    return products
+
+
+@router.get("/products/store/{store_id}")
 async def get_store_products_api(store_id: str):
-    return await get_products_by_store(store_id)
+    """Returns products that a store has selected."""
+    products = await get_store_selected_products(store_id)
+    return products
 
-@router.patch("/{product_id}/toggle-selection")
-async def toggle_product_selection_api(product_id: str):
-    return await toggle_product_selection(product_id)
 
-@router.post("/manual")
+@router.post("/products/manual")
 async def add_manual_product_api(req: ManualProductRequest):
+    """Adds a custom product and maps it to the store."""
     return await add_manual_product(req.store_id, req.dict())

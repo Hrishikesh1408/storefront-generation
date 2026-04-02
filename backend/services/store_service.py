@@ -74,3 +74,41 @@ async def publish_store(user_id: str) -> bool:
     )
     
     return result.modified_count > 0
+
+
+async def select_products_for_store(user_id: str, product_ids: list) -> bool:
+    """
+    Adds product IDs to the store's products map.
+
+    Args:
+        user_id (str): Database ID of the store owner.
+        product_ids (list): List of product ID strings to add.
+
+    Returns:
+        bool: True if updated successfully.
+    """
+    update_fields = {f"products.{pid}": True for pid in product_ids}
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id)},
+        {"$set": update_fields}
+    )
+    return result.modified_count > 0
+
+
+async def deselect_product_from_store(user_id: str, product_id: str) -> bool:
+    """
+    Removes a product ID from the store's products map.
+
+    Args:
+        user_id (str): Database ID of the store owner.
+        product_id (str): The product ID to remove.
+
+    Returns:
+        bool: True if updated successfully.
+    """
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id)},
+        {"$unset": {f"products.{product_id}": ""}}
+    )
+    return result.modified_count > 0
+

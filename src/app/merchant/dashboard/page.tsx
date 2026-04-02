@@ -15,20 +15,20 @@ export default function MerchantDashboard() {
   const [store, setStore] = useState<any>(null);
   const [storeName, setStoreName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generatingProducts, setGeneratingProducts] = useState(false);
+
   const [publishing, setPublishing] = useState(false);
   const [loadingStore, setLoadingStore] = useState(true);
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [storeCategories, setStoreCategories] = useState<any[]>([]);
 
-  const StoreCategories = [
-    { label: "Clothing", value: "clothing" },
-    { label: "Home Decor", value: "home_decor" },
-    { label: "Beauty", value: "beauty" },
-    { label: "Food & Beverage", value: "food_beverage" },
-    { label: "Bakery", value: "bakery" },
-  ];
+  useEffect(() => {
+    fetch("/api/category")
+      .then((res) => res.json())
+      .then((data) => setStoreCategories(data.categories || []))
+      .catch((err) => console.error("Error fetching categories:", err));
+  }, []);
 
   useEffect(() => {
     fetch("/api/store/me")
@@ -40,16 +40,18 @@ export default function MerchantDashboard() {
       .finally(() => setLoadingStore(false));
   }, []);
 
-  const getCategoryLabel = (value: string) =>
-    StoreCategories.find((cat) => cat.value === value)?.label || value;
+  const getCategoryLabel = (value: string) => {
+    return storeCategories.find((cat) => cat.value === value)?.label || value;
+  };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active": return <Badge variant="success" dot>Active</Badge>;
-      case "draft": return <Badge variant="info" dot>Draft</Badge>;
-      case "pending": return <Badge variant="warning" dot>Pending</Badge>;
-      default: return <Badge variant="neutral" dot>Deferred</Badge>;
-    }
+    const config: Record<string, { variant: "success" | "warning" | "danger" | "neutral"; label: string }> = {
+      active: { variant: "success", label: "Active" },
+      pending: { variant: "warning", label: "Pending" },
+      deferred: { variant: "danger", label: "Deferred" },
+    };
+    const match = config[status] || { variant: "neutral" as const, label: status };
+    return <Badge variant={match.variant as "success" | "warning" | "info" | "neutral" | "danger"}>{match.label}</Badge>;
   };
 
   const handleCreate = async () => {
@@ -78,26 +80,6 @@ export default function MerchantDashboard() {
     setLoading(false);
   };
 
-  const handleGenerateProducts = async () => {
-    if (!store?._id) return;
-    setGeneratingProducts(true);
-    try {
-      const res = await fetch(`/api/product/generate?store_id=${store._id}`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to generate products");
-        setGeneratingProducts(false);
-      } else {
-        router.push("/merchant/products");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Request failed");
-      setGeneratingProducts(false);
-    }
-  };
 
   const handlePublishStore = async () => {
     setPublishing(true);
@@ -150,14 +132,18 @@ export default function MerchantDashboard() {
                 label="Store Name"
               />
 
-              <Select
-                name="category"
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                options={StoreCategories}
-                placeholder="Choose a category"
-                label="Category"
-              />
+                className="w-full border px-3 py-2 mb-3"
+              >
+                <option value="">Select category</option>
+                {storeCategories.map((cat: any) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
 
               <Textarea
                 name="description"
@@ -196,49 +182,29 @@ export default function MerchantDashboard() {
               {getStatusBadge(store.status || "deferred")}
             </div>
 
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between items-center py-2 border-b border-[var(--border-default)]">
-                <span className="text-sm text-[var(--text-muted)]">Category</span>
-                <span className="text-sm font-medium text-[var(--text-primary)]">
-                  {getCategoryLabel(store.category)}
-                </span>
-              </div>
-              {store.description && (
-                <div className="flex justify-between items-start py-2 border-b border-[var(--border-default)]">
-                  <span className="text-sm text-[var(--text-muted)] shrink-0 mr-4">Description</span>
-                  <span className="text-sm text-[var(--text-primary)] text-right">
-                    {store.description}
-                  </span>
-                </div>
-              )}
-            </div>
+            <p className="text-gray-600">
+              Category: {getCategoryLabel(store.category)}
+            </p>
+
+            <p className="text-gray-600">Description: {store.description}</p>
+
+            <p className="text-gray-600 capitalize">Store Status: {store.status || "draft"}</p>
 
             {store.status === "active" ? (
-              <Button fullWidth disabled variant="secondary">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M4 8l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Store is Active
-              </Button>
-            ) : store.status === "draft" ? (
               <Button
-                onClick={handlePublishStore}
-                fullWidth
-                loading={publishing}
+                className="w-full mt-6 opacity-70 cursor-not-allowed"
+                disabled={true}
+                onClick={() => { }}
               >
-                Publish Store
-              </Button>
-            ) : store.status === "pending" ? (
-              <Button fullWidth disabled variant="secondary" loading>
-                Generating Products...
+                Store is Active
               </Button>
             ) : (
               <Button
-                onClick={handleGenerateProducts}
-                fullWidth
-                loading={generatingProducts}
+                onClick={handlePublishStore}
+                className="w-full mt-6"
+                disabled={publishing}
               >
-                Generate Products
+                {publishing ? "Publishing..." : "Publish Store"}
               </Button>
             )}
           </Card>

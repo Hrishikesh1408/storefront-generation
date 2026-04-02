@@ -1,7 +1,8 @@
+import os
 import requests
 import asyncio
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_URL = os.getenv("OLLAMA_URL")
 
 def call_ollama(prompt: str):
     response = requests.post(

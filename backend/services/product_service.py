@@ -1,131 +1,93 @@
-from db.mongo import db
+"""
+Product Service.
+
+Handles database operations for products. Products are stored globally
+by category. Stores reference selected products via a products map
+in the store document.
+"""
 from bson import ObjectId
-from services.ollama_service import call_ollama_async
+from db.mongo import db
 from utils.image import get_random_image
-import json
 
 products_collection = db["products"]
+stores_collection = db["stores"]
 
 
-def build_prompt(store_name: str, description: str = "") -> str:
-    return f"""
-Generate exactly 6 clothing products for an online store.
+async def get_products_by_category(category_value: str) -> list:
+    """
+    Retrieves all products for a given category.
 
-Store Name: {store_name}
-Store Description: {description}
+    Args:
+        category_value (str): The category slug (e.g. "clothing").
 
-Use the description STRICTLY to determine:
-- product type
-- style
-- pricing
-
-Return ONLY valid JSON array with:
-- name
-- description (max 12 words)
-- price (between 10 and 150)
-
-No extra text.
-"""
-
-
-def parse_products(raw: str):
-    try:
-        return json.loads(raw)
-    except Exception as e:
-        print("JSON parse error:", e)
-        print("RAW RESPONSE:", raw)
-        return []
-
-
-async def generate_products_for_store(store_id: str):
-    store = await db["stores"].find_one({"_id": ObjectId(store_id)})
-
-    if not store:
-        return {"error": "Store not found"}
-
-    # Update store status to pending during generation
-    await db["stores"].update_one(
-        {"_id": ObjectId(store_id)},
-        {"$set": {"status": "pending"}}
-    )
-
-    prompt = build_prompt(
-        store["name"],
-        store.get("description", "")
-    )
-
-    raw = await call_ollama_async(prompt)
-    products = parse_products(raw)
-
-    final_products = []
-
-    for p in products:
-        try:
-            product = {
-                "store_id": ObjectId(store_id),
-                "name": p.get("name"),
-                "description": p.get("description"),
-                "price": float(p.get("price", 0)),
-                "image_url": get_random_image(),
-                "selected": False
-            }
-
-            result = await products_collection.insert_one(product)
-            product["_id"] = str(result.inserted_id)
-
-            final_products.append(product)
-
-        except Exception as e:
-            print("Product error:", e)
-
-    for p in final_products:
-        p["store_id"] = str(p["store_id"])
-
-    # Update store status to draft after successful generation
-    await db["stores"].update_one(
-        {"_id": ObjectId(store_id)},
-        {"$set": {"status": "draft"}}
-    )
-
-    return final_products
-
-async def get_products_by_store(store_id: str):
+    Returns:
+        list: A list of product documents.
+    """
     products = []
-    async for p in products_collection.find({"store_id": ObjectId(store_id)}):
+    async for p in products_collection.find({"category": category_value}):
         p["_id"] = str(p["_id"])
-        p["store_id"] = str(p["store_id"])
         products.append(p)
     return products
 
-async def toggle_product_selection(product_id: str):
-    product = await products_collection.find_one({"_id": ObjectId(product_id)})
-    if not product:
-        return {"error": "Product not found"}
-    
-    new_status = not product.get("selected", False)
-    await products_collection.update_one(
-        {"_id": ObjectId(product_id)},
-        {"$set": {"selected": new_status}}
-    )
-    return {"status": "success", "selected": new_status}
 
-async def add_manual_product(store_id: str, data: dict):
+async def get_store_selected_products(store_id: str) -> list:
+    """
+    Retrieves the actual product documents that a store has selected.
+
+    Args:
+        store_id (str): The store's ObjectId string.
+
+    Returns:
+        list: A list of product documents the store has selected.
+    """
+    store = await stores_collection.find_one({"_id": ObjectId(store_id)})
+    if not store or not store.get("products"):
+        return []
+
+    product_ids = [ObjectId(pid) for pid in store["products"].keys()]
+    products = []
+    async for p in products_collection.find({"_id": {"$in": product_ids}}):
+        p["_id"] = str(p["_id"])
+        products.append(p)
+    return products
+
+
+async def add_manual_product(store_id: str, data: dict) -> dict:
+    """
+    Adds a custom product to the products collection and automatically
+    maps it to the store.
+
+    Args:
+        store_id (str): The store's ObjectId string.
+        data (dict): Product data (name, description, price, image_url).
+
+    Returns:
+        dict: The inserted product document.
+    """
+    # Get the store to know the category
+    store = await stores_collection.find_one({"_id": ObjectId(store_id)})
+    if not store:
+        return {"error": "Store not found"}
+
     product = {
-        "store_id": ObjectId(store_id),
+        "category": store.get("category", ""),
         "name": data.get("name"),
         "description": data.get("description"),
         "price": float(data.get("price", 0)),
-        "image_url": data.get("image_url", get_random_image()),
-        "selected": True
+        "image_url": data.get("image_url") or get_random_image(),
     }
     result = await products_collection.insert_one(product)
     product["_id"] = str(result.inserted_id)
-    product["store_id"] = str(product["store_id"])
 
-    # Ensure store is marked draft if user manually adds a product
-    await db["stores"].update_one(
+    # Also add to store's products map and mark as draft
+    await stores_collection.update_one(
         {"_id": ObjectId(store_id)},
-        {"$set": {"status": "draft"}}
+        {
+            "$set": {
+                f"products.{product['_id']}": True,
+                "status": "draft"
+            }
+        }
     )
 
     return product

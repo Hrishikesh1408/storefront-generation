@@ -10,10 +10,15 @@ import Spinner from "@/src/components/ui/Spinner/Spinner";
 import UserRoleModal from "@/src/components/admin/UserRoleModal";
 import StoreDetailsModal from "@/src/components/admin/StoreDetailsModal";
 
-export default function AdminDashboard() {
+type Tab = "users" | "stores" | "categories";
+
+export default function Page() {
+  const [activeTab, setActiveTab] = useState<Tab>("users");
+
+  // ================= USERS STATE =================
   const [email, setEmail] = useState("");
   const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -21,11 +26,23 @@ export default function AdminDashboard() {
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [selectedStoreUser, setSelectedStoreUser] = useState<any>(null);
 
-  const fetchUsers = async (email?: string) => {
-    setLoading(true);
+  // ================= STORES STATE =================
+  const [storeName, setStoreName] = useState("");
+  const [stores, setStores] = useState<any[]>([]);
+  const [loadingStores, setLoadingStores] = useState(false);
+
+  // ================= CATEGORIES STATE =================
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [newCategoryLabel, setNewCategoryLabel] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
+
+  // ================= FETCH USERS =================
+  const fetchUsers = async (searchEmail?: string) => {
+    setLoadingUsers(true);
     try {
-      const url = email
-        ? `/api/user?email=${encodeURIComponent(email)}`
+      const url = searchEmail
+        ? `/api/user?email=${encodeURIComponent(searchEmail)}`
         : `/api/user`;
       const res = await fetch(url);
       const data = await res.json();
@@ -34,16 +51,93 @@ export default function AdminDashboard() {
       console.error("Error fetching users:", err);
       setUsers([]);
     } finally {
-      setLoading(false);
+      setLoadingUsers(false);
     }
   };
 
+  // ================= FETCH STORES =================
+  const fetchStores = async (searchName?: string) => {
+    setLoadingStores(true);
+    try {
+      const url = searchName
+        ? `/api/admin/stores?name=${encodeURIComponent(searchName)}`
+        : `/api/admin/stores`;
+      const res = await fetch(url);
+      const data = await res.json();
+      setStores(data.stores || []);
+    } catch (err) {
+      console.error("Error fetching stores:", err);
+      setStores([]);
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
+  // ================= FETCH CATEGORIES =================
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const res = await fetch("/api/category");
+      const data = await res.json();
+      setCategories(data.categories || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // ================= ADD CATEGORY =================
+  const handleAddCategory = async () => {
+    if (!newCategoryLabel.trim()) return;
+    setAddingCategory(true);
+    try {
+      const res = await fetch("/api/category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newCategoryLabel }),
+      });
+      if (res.ok) {
+        setNewCategoryLabel("");
+        await fetchCategories();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to add category");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error adding category");
+    }
+    setAddingCategory(false);
+  };
+
+  // ================= DELETE CATEGORY =================
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    try {
+      const res = await fetch(`/api/category/${categoryId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await fetchCategories();
+      } else {
+        alert("Failed to delete category");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting category");
+    }
+  };
+
+  // ================= LOAD DATA ON TAB SWITCH =================
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (activeTab === "users") fetchUsers();
+    if (activeTab === "stores") fetchStores();
+    if (activeTab === "categories") fetchCategories();
+  }, [activeTab]);
 
-  const handleSearch = () => fetchUsers(email);
-
+  // ================= MODALS =================
   const openModal = (user: any) => {
     setSelectedUser(user);
     setIsModalOpen(true);
@@ -70,13 +164,12 @@ export default function AdminDashboard() {
     );
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "admin": return "info" as const;
-      case "merchant": return "success" as const;
-      default: return "neutral" as const;
-    }
-  };
+  // ================= TAB STYLES =================
+  const tabClass = (tab: Tab) =>
+    `px-6 py-3 text-sm font-semibold cursor-pointer transition-colors ${activeTab === tab
+      ? "text-blue-700 border-b-2 border-blue-700 bg-white"
+      : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+    }`;
 
   return (
     <div className="min-h-screen bg-[var(--bg-body)] flex flex-col">
@@ -88,115 +181,234 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8">
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">
-            User Management
-          </h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            Search, manage roles, and view merchant store details
-          </p>
-        </div>
+      {/* ================= TABS ================= */}
+      <div className="mx-15 flex border-b border-gray-300 bg-gray-50">
+        <button className={tabClass("users")} onClick={() => setActiveTab("users")}>
+          Users
+        </button>
+        <button className={tabClass("stores")} onClick={() => setActiveTab("stores")}>
+          Stores
+        </button>
+        <button className={tabClass("categories")} onClick={() => setActiveTab("categories")}>
+          Categories
+        </button>
+      </div>
 
-        {/* Search Bar */}
-        <div className="flex gap-3 mb-6 animate-slide-up">
-          <Input
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Search by email address..."
-            size="md"
-            clearable
-            onClear={() => {
-              setEmail("");
-              fetchUsers();
-            }}
-          />
-          <Button onClick={handleSearch} variant="primary">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            Search
-          </Button>
-        </div>
+      {/* ================= MAIN CONTENT ================= */}
+      <main className="flex flex-col py-10 mx-15 px-5 bg-white min-h-[500px]">
 
-        {/* Table */}
-        <div className="bg-white rounded-[var(--radius-md)] border border-[var(--border-default)] shadow-[var(--shadow-sm)] overflow-hidden animate-slide-up">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--neutral-50)] border-b border-[var(--border-default)]">
-                  <th className="text-left px-4 py-3 font-medium text-[var(--text-secondary)]">UID</th>
-                  <th className="text-left px-4 py-3 font-medium text-[var(--text-secondary)]">Email</th>
-                  <th className="text-left px-4 py-3 font-medium text-[var(--text-secondary)]">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-[var(--text-secondary)]">Role</th>
-                  <th className="text-left px-4 py-3 font-medium text-[var(--text-secondary)] w-28">Store</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-default)]">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-12">
-                      <Spinner />
-                    </td>
+        {/* ==================== USERS TAB ==================== */}
+        {activeTab === "users" && (
+          <>
+            <div className="flex gap-4 mb-6">
+              <Input
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Search user by email"
+                size="sm"
+                clearable
+                onClear={() => {
+                  setEmail("");
+                  fetchUsers();
+                }}
+              />
+              <Button onClick={() => fetchUsers(email)} size="sm">
+                Search
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-xs border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200 font-semibold">
+                    <th className="p-2 text-left">UID</th>
+                    <th className="p-2 text-left">Email</th>
+                    <th className="p-2 text-left">Name</th>
+                    <th className="p-2 text-left">Role</th>
+                    <th className="p-2 text-left w-24">Store</th>
                   </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-[var(--text-muted)]">
-                      No users found
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="hover:bg-[var(--neutral-50)] transition-colors"
-                    >
-                      <td className="px-4 py-3 text-[var(--text-muted)] font-mono text-xs">
-                        {user.id?.substring(0, 8)}...
-                      </td>
-                      <td className="px-4 py-3 text-[var(--text-primary)]">
-                        {user.email}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--text-primary)]">
-                        {user.name || <span className="text-[var(--text-muted)]">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => user.role !== "admin" && openModal(user)}
-                          disabled={user.role === "admin"}
-                          className="disabled:cursor-default"
-                        >
-                          <Badge
-                            variant={getRoleBadgeVariant(user.role)}
-                            dot
-                            className={user.role !== "admin" ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+                </thead>
+                <tbody>
+                  {loadingUsers ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center">Loading...</td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-gray-500">No users found</td>
+                    </tr>
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.id} className="bg-gray-50 border-t">
+                        <td className="p-2">{user.id}</td>
+                        <td className="p-2">{user.email}</td>
+                        <td className="p-2">{user.name || "N/A"}</td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => user.role !== "admin" && openModal(user)}
+                            disabled={user.role === "admin"}
+                            className={`${user.role === "admin"
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-blue-600 hover:text-blue-800"
+                              }`}
                           >
                             {user.role || "N/A"}
-                          </Badge>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        {user.role === "merchant" && (
-                          <button
-                            onClick={() => openStoreModal(user)}
-                            className="text-[var(--primary-600)] hover:text-[var(--primary-700)] text-sm font-medium transition-colors"
-                          >
-                            View Store
                           </button>
-                        )}
+                        </td>
+                        <td className="p-2">
+                          {user.role === "merchant" && (
+                            <button
+                              onClick={() => openStoreModal(user)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              View Store
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ==================== STORES TAB ==================== */}
+        {activeTab === "stores" && (
+          <>
+            <div className="flex gap-4 mb-6">
+              <Input
+                name="storeName"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="Search store by name"
+                size="sm"
+                clearable
+                onClear={() => {
+                  setStoreName("");
+                  fetchStores();
+                }}
+              />
+              <Button onClick={() => fetchStores(storeName)} size="sm">
+                Search
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-xs border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200 font-semibold">
+                    <th className="p-2 text-left">Store ID</th>
+                    <th className="p-2 text-left">Name</th>
+                    <th className="p-2 text-left">Category</th>
+                    <th className="p-2 text-left">Status</th>
+                    <th className="p-2 text-left">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingStores ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center">Loading...</td>
+                    </tr>
+                  ) : stores.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-gray-500">No stores found</td>
+                    </tr>
+                  ) : (
+                    stores.map((store) => (
+                      <tr key={store._id} className="bg-gray-50 border-t">
+                        <td className="p-2 truncate">{store._id}</td>
+                        <td className="p-2">{store.name}</td>
+                        <td className="p-2 capitalize">{store.category?.replace("_", " ") || "N/A"}</td>
+                        <td className="p-2">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider ${store.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                              }`}
+                          >
+                            {store.status || "draft"}
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          {store.created_at
+                            ? new Date(store.created_at).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ==================== CATEGORIES TAB ==================== */}
+        {activeTab === "categories" && (
+          <>
+            <div className="flex gap-4 mb-6">
+              <Input
+                name="newCategory"
+                value={newCategoryLabel}
+                onChange={(e) => setNewCategoryLabel(e.target.value)}
+                placeholder="Enter category name (e.g. Home Decor)"
+                size="sm"
+              />
+              <Button
+                onClick={handleAddCategory}
+                size="sm"
+                disabled={addingCategory || !newCategoryLabel.trim()}
+              >
+                {addingCategory ? "Adding..." : "Add"}
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-xs border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200 font-semibold">
+                    <th className="p-2 text-left">Label</th>
+                    <th className="p-2 text-left">Value</th>
+                    <th className="p-2 text-left w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingCategories ? (
+                    <tr>
+                      <td colSpan={3} className="p-4 text-center">Loading...</td>
+                    </tr>
+                  ) : categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="p-4 text-center text-gray-500">
+                        No categories yet. Add one above.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  ) : (
+                    categories.map((cat) => (
+                      <tr key={cat._id} className="bg-gray-50 border-t">
+                        <td className="p-2">{cat.label}</td>
+                        <td className="p-2 text-gray-500">{cat.value}</td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => handleDeleteCategory(cat._id)}
+                            className="text-red-500 hover:text-red-700 font-medium"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
-        {/* Modals */}
+        {/* ================= MODALS ================= */}
         <UserRoleModal
           user={selectedUser}
           isOpen={isModalOpen}

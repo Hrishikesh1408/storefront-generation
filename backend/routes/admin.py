@@ -106,3 +106,27 @@ async def update_role(req: UpdateRoleRequest):
         "user_id": req.user_id,
         "new_role": req.role,
     }
+
+
+@router.get("/admin/stores")
+async def list_stores(name: str = None):
+    """
+    Lists all stores. If a name query parameter is provided, it searches
+    for stores matching the name string using a regex match. Returns
+    up to 20 latest stores sorted by creation date.
+    """
+    query = {}
+
+    if name:
+        query["name"] = {"$regex": name, "$options": "i"}
+
+    stores_cursor = db["stores"].find(query).sort("created_at", -1).limit(20)
+
+    stores = []
+    async for store in stores_cursor:
+        store["_id"] = str(store["_id"])
+        store["owner_id"] = str(store["owner_id"])
+        stores.append(store)
+
+    return {"stores": stores}
+

@@ -9,7 +9,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from services.jwt_service import verify_jwt
-from services.store_service import find_or_create_store, get_store_by_user, publish_store
+from services.store_service import (
+    find_or_create_store,
+    get_store_by_user,
+    publish_store,
+    select_products_for_store,
+    deselect_product_from_store,
+)
+from services.category_service import get_category_values
 
 router = APIRouter()
 
@@ -22,19 +29,18 @@ class StoreCreate(BaseModel):
     logo: Optional[str] = None
 
 
+class SelectProducts(BaseModel):
+    """Payload for selecting multiple products."""
+    product_ids: list[str]
+
+
 @router.post("/store/create")
 async def create_store(data: StoreCreate, user=Depends(verify_jwt)):
     """
     Creates a new store for the authenticated merchant. 
-    Validates category constraints and requires merchant role.
+    Validates category against the categories collection and requires merchant role.
     """
-    allowed_categories = [
-        "clothing",
-        "home_decor",
-        "beauty",
-        "food_beverage",
-        "bakery",
-    ]
+    allowed_categories = await get_category_values()
 
     if data.category not in allowed_categories:
         raise HTTPException(status_code=400, detail="Invalid category")
@@ -66,3 +72,28 @@ async def publish_my_store(user=Depends(verify_jwt)):
         raise HTTPException(status_code=400, detail="Failed to publish store or store not found")
     
     return {"message": "Store published successfully"}
+
+
+@router.post("/store/select-products")
+async def select_store_products(data: SelectProducts, user=Depends(verify_jwt)):
+    """
+    Adds selected product IDs to the merchant's store.
+    """
+    success = await select_products_for_store(user["user_id"], data.product_ids)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update selected products")
+    
+    return {"message": "Products selected successfully"}
+
+
+@router.post("/store/deselect-product/{product_id}")
+async def deselect_store_product(product_id: str, user=Depends(verify_jwt)):
+    """
+    Removes a single product ID from the merchant's store.
+    """
+    success = await deselect_product_from_store(user["user_id"], product_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to deselect product")
+    
+    return {"message": "Product deselected successfully"}
+

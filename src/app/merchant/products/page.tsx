@@ -23,7 +23,7 @@ export default function ProductsPage() {
   const [manualPrice, setManualPrice] = useState("");
   const [manualImage, setManualImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [generatingProducts, setGeneratingProducts] = useState(false);
+
 
   useEffect(() => {
     fetch("/api/store/me")
@@ -31,7 +31,7 @@ export default function ProductsPage() {
       .then((data) => {
         if (data?._id) {
           setStore(data);
-          fetchProducts(data._id);
+          fetchProducts(data.category, data);
         } else {
           router.push("/merchant/dashboard");
         }
@@ -40,33 +40,58 @@ export default function ProductsPage() {
       .finally(() => setLoadingStore(false));
   }, [router]);
 
-  const fetchProducts = async (storeId: string) => {
+  const fetchProducts = async (category: string, currentStore: any) => {
     setLoadingProducts(true);
     try {
-      const res = await fetch(`/api/product?store_id=${storeId}`);
+      const res = await fetch(`/api/product/by-category/${category}`);
       if (res.ok) {
-        const data = await res.json();
-        setProducts(data);
+        const allCategoryProducts = await res.json();
+        // Map selected state from store.products (field is products: { [id]: true })
+        const mapped = allCategoryProducts.map((p: any) => ({
+          ...p,
+          selected: !!(currentStore.products && currentStore.products[p._id])
+        }));
+        setProducts(mapped);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching category products:", err);
     }
     setLoadingProducts(false);
   };
 
   const toggleSelection = async (productId: string, currentStatus: boolean) => {
+    const nextStatus = !currentStatus;
+    // Optimistic update
     setProducts((prev) =>
-      prev.map((p) => (p._id === productId ? { ...p, selected: !currentStatus } : p))
+      prev.map((p) => (p._id === productId ? { ...p, selected: nextStatus } : p))
     );
+
     try {
-      const res = await fetch(`/api/product/${productId}/select`, { method: "PATCH" });
+      const url = nextStatus 
+        ? "/api/store/select-products" 
+        : `/api/store/deselect-product/${productId}`;
+      
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: nextStatus ? JSON.stringify({ product_ids: [productId] }) : undefined,
+      });
+
       if (!res.ok) {
-        setProducts((prev) =>
-          prev.map((p) => (p._id === productId ? { ...p, selected: currentStatus } : p))
-        );
+        throw new Error("Failed to update selection");
       }
+
+      // Update store state locally for consistency
+      setStore((prev: any) => {
+        const newProductsMap = { ...(prev.products || {}) };
+        if (nextStatus) newProductsMap[productId] = true;
+        else delete newProductsMap[productId];
+        return { ...prev, products: newProductsMap };
+      });
+
     } catch (err) {
       console.error(err);
+      // Revert on failure
       setProducts((prev) =>
         prev.map((p) => (p._id === productId ? { ...p, selected: currentStatus } : p))
       );
@@ -90,7 +115,19 @@ export default function ProductsPage() {
       });
       if (res.ok) {
         const newProduct = await res.json();
-        setProducts([...products, newProduct]);
+        
+        // Manual add in backend also updates store.products, so we need to update our store state
+        setStore((prev: any) => ({
+            ...prev,
+            products: { ...(prev.products || {}), [newProduct._id]: true }
+        }));
+
+        // Refresh product list to include the new product
+        fetchProducts(store.category, {
+            ...store,
+            products: { ...(store.products || {}), [newProduct._id]: true }
+        });
+
         setIsModalOpen(false);
         setManualName("");
         setManualDesc("");
@@ -106,26 +143,7 @@ export default function ProductsPage() {
     setSubmitting(false);
   };
 
-  const handleGenerateProducts = async () => {
-    if (!store?._id) return;
-    setGeneratingProducts(true);
-    try {
-      const res = await fetch(`/api/product/generate?store_id=${store._id}`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Failed to generate products");
-      } else {
-        await fetchProducts(store._id);
-        setStore((prev: any) => ({ ...prev, status: "draft" }));
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Request failed");
-    }
-    setGeneratingProducts(false);
-  };
+
 
   if (loadingStore) {
     return (
@@ -162,14 +180,8 @@ export default function ProductsPage() {
             <Spinner size="lg" />
           </div>
         ) : products.length === 0 ? (
-          <div className="bg-white rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)] shadow-[var(--shadow-sm)]">
-            <EmptyState
-              title="No products yet"
-              description="Generate AI-powered products or add them manually to start building your storefront."
-              actionLabel={generatingProducts ? "Generating..." : "Generate Products"}
-              onAction={handleGenerateProducts}
-              loading={generatingProducts}
-            />
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow mt-10 border border-dashed border-gray-300">
+            <p className="text-gray-500 mb-6 text-lg">No products yet. Click &quot;Add Custom Product&quot; to get started.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

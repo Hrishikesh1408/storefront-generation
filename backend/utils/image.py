@@ -1,7 +1,7 @@
 import os
 import random
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL")
 
 
 def get_random_image() -> str:
