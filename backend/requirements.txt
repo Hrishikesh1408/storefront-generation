@@ -6,3 +6,5 @@ google-auth-oauthlib
 uvicorn
 python-jose
 motor
+requests
+pydantic
