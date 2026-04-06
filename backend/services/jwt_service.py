@@ -26,6 +26,8 @@ def create_jwt(user: dict) -> str:
     payload = {
         "user_id": str(user["_id"]),
         "email": user["email"],
+        "name": user.get("name", ""),
+        "picture": user.get("picture", ""),
         "role": user["role"],
         "exp": datetime.now(timezone.utc) + timedelta(days=7),
     }

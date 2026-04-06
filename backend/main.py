@@ -13,6 +13,7 @@ from routes.auth import router as auth_router
 from routes.store import router as store_router
 from routes.product import router as product_router
 from routes.category import router as category_router
+from routes.store import router as store_router
 
 app = FastAPI(title="Storefront Generation API")
 

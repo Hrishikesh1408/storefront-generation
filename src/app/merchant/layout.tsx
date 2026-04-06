@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import logo from "@/src/assets/images/newturbifylogo.png";
+import ProfileDropdown from "@/src/components/auth/ProfileDropdown";
 
 const navItems = [
   {
@@ -52,11 +53,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
           <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
-            <span className="text-white text-xs font-semibold">M</span>
-          </div>
-        </div>
+        <ProfileDropdown />
       </header>
 
       <div className="flex flex-1 overflow-hidden">

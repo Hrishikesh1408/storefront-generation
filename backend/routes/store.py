@@ -15,6 +15,8 @@ from services.store_service import (
     publish_store,
     select_products_for_store,
     deselect_product_from_store,
+    get_store_by_id,
+    get_all_active_stores,
 )
 from services.category_service import get_category_values
 
@@ -97,3 +99,18 @@ async def deselect_store_product(product_id: str, user=Depends(verify_jwt)):
     
     return {"message": "Product deselected successfully"}
 
+@router.get("/store/active/all")
+async def get_active_stores():
+    """
+    Retrieves a list of all active stores.
+    """
+    stores = await get_all_active_stores()
+    return stores
+
+@router.get("/store/{store_id}")
+async def get_store(store_id: str):
+    """
+    Retrieves the storefront configuration for a specific store.
+    """
+    store = await get_store_by_id(store_id)
+    return store

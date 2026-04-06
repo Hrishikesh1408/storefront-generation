@@ -4,6 +4,7 @@ User Operations Service.
 Handles database operations related to user accounts and roles.
 """
 from bson import ObjectId
+from pymongo import ReturnDocument
 
 from db.mongo import db
 from models.user_model import create_user_document
@@ -63,3 +64,34 @@ async def update_user_role(user_id: str, role: str) -> bool:
     )
 
     return result.modified_count > 0
+
+
+async def update_user_profile(user_id: str, name: str = None, picture: str = None) -> dict | None:
+    """
+    Updates a user's profile fields (name and/or picture).
+
+    Args:
+        user_id (str): Database ID of the user.
+        name (str, optional): New display name.
+        picture (str, optional): New profile picture URL.
+
+    Returns:
+        dict | None: The updated user document, or None if not found.
+    """
+    update_fields = {}
+    if name is not None:
+        update_fields["name"] = name
+    if picture is not None:
+        update_fields["picture"] = picture
+
+    if not update_fields:
+        return None
+
+    result = await users_collection.find_one_and_update(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_fields},
+        return_document=ReturnDocument.AFTER,
+    )
+
+    return result
+

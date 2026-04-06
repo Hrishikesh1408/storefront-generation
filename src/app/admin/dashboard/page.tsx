@@ -11,6 +11,7 @@ import Spinner from "@/src/components/ui/Spinner/Spinner";
 import UserRoleModal from "@/src/components/admin/UserRoleModal";
 import StoreDetailsModal from "@/src/components/admin/StoreDetailsModal";
 import CategoryProductsModal from "@/src/components/admin/CategoryProductsModal";
+import ProfileDropdown from "@/src/components/auth/ProfileDropdown";
 
 type Tab = "users" | "stores" | "categories";
 
@@ -204,8 +205,9 @@ export default function Page() {
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-[var(--border-default)] bg-white/80 backdrop-blur-md sticky top-0 z-30">
         <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Badge variant="info" dot>Admin</Badge>
+          <ProfileDropdown />
         </div>
       </header>
 

@@ -15,9 +15,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
+  if (path.startsWith("/user/dashboard") && role !== "user") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  }
+
+  if (path.startsWith("/store") && role !== "user") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/merchant/:path*"],
+  matcher: ["/admin/:path*", "/merchant/:path*", "/user/dashboard/:path*", "/store/:path*"],
 };

@@ -112,3 +112,37 @@ async def deselect_product_from_store(user_id: str, product_id: str) -> bool:
     )
     return result.modified_count > 0
 
+async def get_store_by_id(store_id: str) -> dict | None:
+    """
+    Retrieves a store by its ID.
+    
+    Args:
+        store_id (str): Database ID of the store.
+        
+    Returns:
+        dict | None: The store document if found, None otherwise.
+    """
+    store = await store_collection.find_one({"_id": ObjectId(store_id)})
+
+    if store:
+        store["_id"] = str(store["_id"])
+        store["owner_id"] = str(store["owner_id"])
+
+    return store
+
+
+async def get_all_active_stores() -> list:
+    """
+    Retrieves all stores that have an 'active' status.
+    
+    Returns:
+        list: A list of active store documents.
+    """
+    cursor = store_collection.find({"status": "active"})
+    stores = await cursor.to_list(length=100)
+    
+    for store in stores:
+        store["_id"] = str(store["_id"])
+        store["owner_id"] = str(store["owner_id"])
+        
+    return stores
