@@ -21,12 +21,12 @@ products_collection = db["products"]
 def build_product_prompt(category_label: str) -> str:
     """Builds a prompt for Ollama to generate 10 products for a given category."""
     return f"""
-Generate exactly 10 products for an online store in the "{category_label}" category.
+Generate exactly 1 products for an online store in the "{category_label}" category.
 
 Return ONLY a valid JSON array with objects containing:
 - name (string)
 - description (max 15 words)
-- price (number between 10 and 200)
+- price (corresponding to products)
 
 No extra text, no markdown, just the JSON array.
 """

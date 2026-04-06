@@ -7,12 +7,16 @@ export async function POST(
   try {
     const params = await context.params;
     const productId = params.id;
-    const authHeader = req.headers.get("Authorization");
+    const token = req.cookies.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const response = await fetch(`${process.env.FASTAPI_URL}/store/deselect-product/${productId}`, {
       method: "POST",
       headers: {
-        ...(authHeader ? { "Authorization": authHeader } : {}),
+        Authorization: `Bearer ${token}`,
       },
     });
 

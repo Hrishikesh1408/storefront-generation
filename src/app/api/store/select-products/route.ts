@@ -3,13 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const authHeader = req.headers.get("Authorization");
+    const token = req.cookies.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const response = await fetch(`${process.env.FASTAPI_URL}/store/select-products`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(authHeader ? { "Authorization": authHeader } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     });
