@@ -45,6 +45,7 @@ next-env.d.ts
 # local env files and Python virtual environment
 /backend/.env
 /backend/venv/
+/backend/images/
 /backend/__pycache__/
 /backend/db/__pycache__/
 /backend/routers/__pycache__/

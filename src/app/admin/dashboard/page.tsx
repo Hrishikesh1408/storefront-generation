@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import logo from "@/src/assets/images/newturbifylogo.png";
 import Input from "@/src/components/ui/TextInput/InputComponent";
@@ -9,6 +10,7 @@ import Badge from "@/src/components/ui/Badge/Badge";
 import Spinner from "@/src/components/ui/Spinner/Spinner";
 import UserRoleModal from "@/src/components/admin/UserRoleModal";
 import StoreDetailsModal from "@/src/components/admin/StoreDetailsModal";
+import CategoryProductsModal from "@/src/components/admin/CategoryProductsModal";
 
 type Tab = "users" | "stores" | "categories";
 
@@ -36,6 +38,8 @@ export default function Page() {
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
 
   // ================= FETCH USERS =================
   const fetchUsers = async (searchEmail?: string) => {
@@ -137,6 +141,20 @@ export default function Page() {
     if (activeTab === "categories") fetchCategories();
   }, [activeTab]);
 
+  // CATEGORY POLLING
+  useEffect(() => {
+    if (activeTab !== "categories") return;
+    const interval = setInterval(() => {
+      fetch("/api/category")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.categories) setCategories(data.categories);
+        })
+        .catch(console.error);
+    }, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
   // ================= MODALS =================
   const openModal = (user: any) => {
     setSelectedUser(user);
@@ -156,6 +174,16 @@ export default function Page() {
   const closeStoreModal = () => {
     setSelectedStoreUser(null);
     setIsStoreModalOpen(false);
+  };
+
+  const openCategoryModal = (cat: any) => {
+    setSelectedCategory(cat);
+    setIsCategoryModalOpen(true);
+  };
+
+  const closeCategoryModal = () => {
+    setSelectedCategory(null);
+    setIsCategoryModalOpen(false);
   };
 
   const handleRoleUpdate = (updatedUser: any) => {
@@ -372,17 +400,18 @@ export default function Page() {
                   <tr className="bg-gray-200 font-semibold">
                     <th className="p-2 text-left">Label</th>
                     <th className="p-2 text-left">Value</th>
+                    <th className="p-2 text-left w-32">Products</th>
                     <th className="p-2 text-left w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingCategories ? (
                     <tr>
-                      <td colSpan={3} className="p-4 text-center">Loading...</td>
+                      <td colSpan={4} className="p-4 text-center">Loading...</td>
                     </tr>
                   ) : categories.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="p-4 text-center text-gray-500">
+                      <td colSpan={4} className="p-4 text-center text-gray-500">
                         No categories yet. Add one above.
                       </td>
                     </tr>
@@ -391,6 +420,17 @@ export default function Page() {
                       <tr key={cat._id} className="bg-gray-50 border-t">
                         <td className="p-2">{cat.label}</td>
                         <td className="p-2 text-gray-500">{cat.value}</td>
+                        <td className="p-2">
+                          {cat.status === "generating" ? (
+                            <span className="px-3 py-1 bg-gray-200 text-gray-500 text-xs font-semibold rounded cursor-not-allowed">
+                              Generating...
+                            </span>
+                          ) : (
+                            <button onClick={() => openCategoryModal(cat)} className="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-semibold rounded transition-colors inline-block">
+                              View Products
+                            </button>
+                          )}
+                        </td>
                         <td className="p-2">
                           <button
                             onClick={() => handleDeleteCategory(cat._id)}
@@ -419,6 +459,11 @@ export default function Page() {
           userId={selectedStoreUser?.id || null}
           isOpen={isStoreModalOpen}
           onClose={closeStoreModal}
+        />
+        <CategoryProductsModal
+          category={selectedCategory}
+          isOpen={isCategoryModalOpen}
+          onClose={closeCategoryModal}
         />
       </main>
     </div>
