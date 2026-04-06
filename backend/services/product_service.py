@@ -8,6 +8,8 @@ in the store document.
 from bson import ObjectId
 from db.mongo import db
 from utils.image import get_random_image
+from services.image_generation_service import generate_product_image_async
+import asyncio
 
 products_collection = db["products"]
 stores_collection = db["stores"]
@@ -78,6 +80,16 @@ async def add_manual_product(store_id: str, data: dict) -> dict:
     }
     result = await products_collection.insert_one(product)
     product["_id"] = str(result.inserted_id)
+
+    if not data.get("image_url") and product.get("name"):
+        asyncio.create_task(
+            generate_product_image_async(
+                product["name"],
+                product["category"],
+                product["_id"]
+            )
+        )
+
 
     # Also add to store's products map and mark as draft
     await stores_collection.update_one(

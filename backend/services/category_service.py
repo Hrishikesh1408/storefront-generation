@@ -11,6 +11,8 @@ from bson import ObjectId
 from db.mongo import db
 from services.ollama_service import call_ollama_async
 from utils.image import get_random_image
+from services.image_generation_service import generate_product_image_async
+import asyncio
 
 categories_collection = db["categories"]
 products_collection = db["products"]
@@ -40,31 +42,44 @@ def parse_products(raw: str) -> list:
         return []
 
 
-async def generate_products_for_category(category_value: str, category_label: str):
+async def _background_category_generation(category_value: str, category_label: str, category_id: str):
     """
-    Generates 10 products for a category using Ollama and stores them
-    in the products collection.
-
-    Args:
-        category_value (str): The slug value of the category (e.g. "clothing").
-        category_label (str): The display label (e.g. "Clothing").
+    Background task to sequentially generate products via Ollama and then 
+    generate their images via Stable Diffusion. Finally sets category status to ready.
     """
-    prompt = build_product_prompt(category_label)
-    raw = await call_ollama_async(prompt)
-    products = parse_products(raw)
+    try:
+        prompt = build_product_prompt(category_label)
+        raw = await call_ollama_async(prompt)
+        products = parse_products(raw)
 
-    for p in products:
-        try:
-            product = {
-                "category": category_value,
-                "name": p.get("name"),
-                "description": p.get("description"),
-                "price": float(p.get("price", 0)),
-                "image_url": get_random_image(),
-            }
-            await products_collection.insert_one(product)
-        except Exception as e:
-            print("Product insert error:", e)
+        for p in products:
+            try:
+                product = {
+                    "category": category_value,
+                    "name": p.get("name"),
+                    "description": p.get("description"),
+                    "price": float(p.get("price", 0)),
+                    "image_url": get_random_image(),
+                }
+                result = await products_collection.insert_one(product)
+                
+                # Sequentially wait for image generation to prevent CPU overload
+                await generate_product_image_async(
+                    p.get("name"), 
+                    category_value, 
+                    str(result.inserted_id)
+                )
+
+            except Exception as e:
+                print("Product insert error:", e)
+    
+    finally:
+        # Mark category as ready
+        await categories_collection.update_one(
+            {"_id": ObjectId(category_id)}, 
+            {"$set": {"status": "ready"}}
+        )
+
 
 
 async def get_all_categories() -> list:
@@ -98,12 +113,18 @@ async def add_category(label: str) -> dict:
     if existing:
         return None
 
-    category = {"label": label.strip(), "value": value}
+    category = {
+        "label": label.strip(), 
+        "value": value,
+        "status": "generating"
+    }
     result = await categories_collection.insert_one(category)
     category["_id"] = str(result.inserted_id)
 
-    # Generate 10 products for this category
-    await generate_products_for_category(value, label.strip())
+    # Immediately offload generation to background task
+    asyncio.create_task(
+        _background_category_generation(value, label.strip(), category["_id"])
+    )
 
     return category
 
