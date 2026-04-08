@@ -146,3 +146,21 @@ async def get_all_active_stores() -> list:
         store["owner_id"] = str(store["owner_id"])
         
     return stores
+
+async def update_product_price_in_store(user_id: str, product_id: str, price: float) -> bool:
+    """
+    Updates the price of a product in the store.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        product_id (str): Database ID of the product.
+        price (float): The new price of the product.
+        
+    Returns:
+        bool: True if updated successfully, False otherwise.
+    """
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
+        {"$set": {f"products.{product_id}": {"price": price}}}
+    )
+    return result.modified_count > 0

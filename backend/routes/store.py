@@ -17,6 +17,7 @@ from services.store_service import (
     deselect_product_from_store,
     get_store_by_id,
     get_all_active_stores,
+    update_product_price_in_store,
 )
 from services.category_service import get_category_values
 
@@ -114,3 +115,14 @@ async def get_store(store_id: str):
     """
     store = await get_store_by_id(store_id)
     return store
+
+@router.post("/store/product/price")
+async def update_product_price(data: dict, user=Depends(verify_jwt)):
+    """
+    Updates the price of a product in the store.
+    """
+    success = await update_product_price_in_store(user["user_id"], data["product_id"], data["price"])
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update product price")
+    
+    return {"message": "Product price updated successfully"}

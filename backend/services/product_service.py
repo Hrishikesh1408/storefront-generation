@@ -50,6 +50,9 @@ async def get_store_selected_products(store_id: str) -> list:
     products = []
     async for p in products_collection.find({"_id": {"$in": product_ids}}):
         p["_id"] = str(p["_id"])
+        override = store["products"].get(p["_id"])
+        if isinstance(override, dict) and "price" in override:
+            p["price"] = override["price"]
         products.append(p)
     return products
 

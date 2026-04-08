@@ -46,11 +46,17 @@ export default function ProductsPage() {
       const res = await fetch(`/api/product/by-category/${category}`);
       if (res.ok) {
         const allCategoryProducts = await res.json();
-        // Map selected state from store.products (field is products: { [id]: true })
-        const mapped = allCategoryProducts.map((p: any) => ({
-          ...p,
-          selected: !!(currentStore.products && currentStore.products[p._id])
-        }));
+        // Map selected state from store.products (field is products: { [id]: true | {price: N} })
+        const mapped = allCategoryProducts.map((p: any) => {
+          const override = currentStore.products && currentStore.products[p._id];
+          const hasOverridePrice = override && typeof override === "object" && override.price !== undefined;
+          
+          return {
+            ...p,
+            price: hasOverridePrice ? override.price : p.price,
+            selected: !!override
+          };
+        });
         setProducts(mapped);
       }
     } catch (err) {
@@ -95,6 +101,38 @@ export default function ProductsPage() {
       setProducts((prev) =>
         prev.map((p) => (p._id === productId ? { ...p, selected: currentStatus } : p))
       );
+    }
+  };
+
+  const updateProductPrice = async (productId: string, newPrice: number) => {
+    try {
+      const res = await fetch("/api/store/product/price", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, price: newPrice }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update product price");
+      }
+
+      // Update local products state
+      setProducts((prev) =>
+        prev.map((p) => (p._id === productId ? { ...p, price: newPrice } : p))
+      );
+
+      // Update store state for consistency
+      setStore((prev: any) => {
+        const newProductsMap = { ...(prev.products || {}) };
+        if (newProductsMap[productId]) {
+          newProductsMap[productId] = { price: newPrice };
+        }
+        return { ...prev, products: newProductsMap };
+      });
+      
+    } catch (err) {
+      console.error("Error updating price:", err);
+      throw err;
     }
   };
 
@@ -190,6 +228,7 @@ export default function ProductsPage() {
                 key={product._id}
                 product={product}
                 toggleSelection={toggleSelection}
+                updatePrice={updateProductPrice}
               />
             ))}
           </div>
