@@ -57,7 +57,7 @@ export default function ProductCardComponent({
           {!isEditing && (
             <div className="absolute bottom-3 left-3">
               <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-full)] bg-white/90 backdrop-blur-sm text-sm font-semibold text-[var(--text-primary)] shadow-sm">
-                ${product.price}
+                ₹{product.price}
               </span>
             </div>
           )}

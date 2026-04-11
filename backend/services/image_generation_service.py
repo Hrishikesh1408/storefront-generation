@@ -51,9 +51,14 @@ async def generate_product_image_async(product_name: str, category_value: str, p
         )
         
         # Update the product in the database with the generated image URL
+        # Support both hash-based string IDs (from ingestion agent) and ObjectIds (legacy)
         from bson import ObjectId
+        try:
+            doc_id = ObjectId(product_id) if len(product_id) == 24 else product_id
+        except Exception:
+            doc_id = product_id
         await products_collection.update_one(
-            {"_id": ObjectId(product_id)},
+            {"_id": doc_id},
             {"$set": {"image_url": image_url}}
         )
         print(f"Successfully generated and saved image for product {product_id} at {image_url}")

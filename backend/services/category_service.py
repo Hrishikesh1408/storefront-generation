@@ -2,84 +2,67 @@
 Category Service.
 
 Handles database operations for store categories.
-When a category is added, 10 products are auto-generated via Ollama
-and stored in the products collection.
+When a category is added, the data ingestion agent is triggered
+to search the web for real product data, extract it, and store it.
 """
-import json
+import asyncio
+import logging
 
 from bson import ObjectId
 from db.mongo import db
-from services.ollama_service import call_ollama_async
-from utils.image import get_random_image
-from services.image_generation_service import generate_product_image_async
-import asyncio
+from agents.ingestion_agent import run_ingestion
+
+logger = logging.getLogger("services.category")
 
 categories_collection = db["categories"]
 products_collection = db["products"]
 
 
-def build_product_prompt(category_label: str) -> str:
-    """Builds a prompt for Ollama to generate 10 products for a given category."""
-    return f"""
-Generate exactly 1 products for an online store in the "{category_label}" category.
-
-Return ONLY a valid JSON array with objects containing:
-- name (string)
-- description (max 15 words)
-- price (corresponding to products)
-
-No extra text, no markdown, just the JSON array.
-"""
-
-
-def parse_products(raw: str) -> list:
-    """Parse the raw Ollama response into a list of products."""
-    try:
-        return json.loads(raw)
-    except Exception as e:
-        print("JSON parse error:", e)
-        print("RAW RESPONSE:", raw)
-        return []
-
-
-async def _background_category_generation(category_value: str, category_label: str, category_id: str):
+async def _background_category_ingestion(
+    category_value: str, category_label: str, category_id: str
+):
     """
-    Background task to sequentially generate products via Ollama and then 
-    generate their images via Stable Diffusion. Finally sets category status to ready.
+    Background task that runs the data ingestion pipeline for a new category.
+    Searches the web for real products, extracts, cleans, deduplicates,
+    and stores them. Falls back to image generation for missing images.
+
+    On completion, sets category status to 'ready'.
+    On failure, sets category status to 'error'.
     """
     try:
-        prompt = build_product_prompt(category_label)
-        raw = await call_ollama_async(prompt)
-        products = parse_products(raw)
+        logger.info(f"Starting ingestion for category: {category_label}")
+        result = await run_ingestion(category_label, category_value)
 
-        for p in products:
-            try:
-                product = {
-                    "category": category_value,
-                    "name": p.get("name"),
-                    "description": p.get("description"),
-                    "price": float(p.get("price", 0)),
-                    "image_url": get_random_image(),
-                }
-                result = await products_collection.insert_one(product)
-                
-                # Sequentially wait for image generation to prevent CPU overload
-                await generate_product_image_async(
-                    p.get("name"), 
-                    category_value, 
-                    str(result.inserted_id)
-                )
-
-            except Exception as e:
-                print("Product insert error:", e)
-    
-    finally:
-        # Mark category as ready
+        # Store the ingestion summary on the category document
         await categories_collection.update_one(
-            {"_id": ObjectId(category_id)}, 
-            {"$set": {"status": "ready"}}
+            {"_id": ObjectId(category_id)},
+            {
+                "$set": {
+                    "status": "ready",
+                    "ingestion_summary": {
+                        "total_added": result.total_added,
+                        "duplicates_skipped": result.duplicates_skipped,
+                        "failed_urls": len(result.failed_urls),
+                        "total_urls_found": result.total_urls_found,
+                        "images_generated": result.images_generated,
+                        "elapsed_seconds": result.elapsed_seconds,
+                    },
+                }
+            },
         )
 
+        logger.info(
+            f"Ingestion complete for '{category_label}': "
+            f"{result.total_added} products added, "
+            f"{result.duplicates_skipped} duplicates skipped"
+        )
+
+    except Exception as e:
+        logger.error(f"Ingestion failed for '{category_label}': {e}")
+        await categories_collection.update_one(
+            {"_id": ObjectId(category_id)},
+            {"$set": {"status": "error", "error_message": str(e)}},
+        )
 
 
 async def get_all_categories() -> list:
@@ -98,10 +81,11 @@ async def get_all_categories() -> list:
 
 async def add_category(label: str) -> dict:
     """
-    Adds a new category and generates 10 products for it.
+    Adds a new category and triggers the data ingestion agent
+    to search the web for real product data.
 
     Args:
-        label (str): The display label for the category (e.g. "Home Decor").
+        label (str): The display label for the category (e.g. "Bakery").
 
     Returns:
         dict: The inserted category document, or None if it already exists.
@@ -114,16 +98,16 @@ async def add_category(label: str) -> dict:
         return None
 
     category = {
-        "label": label.strip(), 
+        "label": label.strip(),
         "value": value,
-        "status": "generating"
+        "status": "generating",
     }
     result = await categories_collection.insert_one(category)
     category["_id"] = str(result.inserted_id)
 
-    # Immediately offload generation to background task
+    # Immediately offload ingestion to background task
     asyncio.create_task(
-        _background_category_generation(value, label.strip(), category["_id"])
+        _background_category_ingestion(value, label.strip(), category["_id"])
     )
 
     return category

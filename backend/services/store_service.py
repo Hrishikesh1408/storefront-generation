@@ -161,6 +161,24 @@ async def update_product_price_in_store(user_id: str, product_id: str, price: fl
     """
     result = await store_collection.update_one(
         {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
-        {"$set": {f"products.{product_id}": {"price": price}}}
+        {"$set": {f"products.{product_id}.price": price}}
+    )
+    return result.modified_count > 0
+
+async def update_product_stock_in_store(user_id: str, product_id: str, stock: int) -> bool:
+    """
+    Updates the stock count of a product in the store.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        product_id (str): Database ID of the product.
+        stock (int): The new stock count.
+        
+    Returns:
+        bool: True if updated successfully, False otherwise.
+    """
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
+        {"$set": {f"products.{product_id}.stock": stock}}
     )
     return result.modified_count > 0
