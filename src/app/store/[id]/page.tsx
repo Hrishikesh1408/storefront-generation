@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Spinner from "@/src/components/ui/Spinner/Spinner";
 import ProfileDropdown from "@/src/components/auth/ProfileDropdown";
 import Button from "@/src/components/ui/Button/ButtonComponent";
 import Card from "@/src/components/ui/Card/Card";
+import { useCart } from "@/src/context/CartContext";
 
 export default function StorefrontPage() {
     const { id } = useParams();
+    const router = useRouter();
+    const { addToCart, cartCount, cartItems, updateQuantity, removeFromCart } = useCart();
+
     const [store, setStore] = useState<any>(null);
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -107,10 +111,21 @@ export default function StorefrontPage() {
                 </div>
 
                 {/* Right: Optional Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
+                    {cartCount > 0 && (
+                        <button
+                            onClick={() => router.push(`/store/${id}/checkout`)}
+                            className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--primary-600)] transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-[var(--primary-600)] rounded-full">
+                                {cartCount}
+                            </span>
+                        </button>
+                    )}
                     <ProfileDropdown />
-                    {/* Example badge or future cart/profile */}
-                    {/* <Badge variant="info" dot>Customer</Badge> */}
                 </div>
 
             </header>
@@ -160,7 +175,7 @@ export default function StorefrontPage() {
                                             </span>
                                             {product.stock !== undefined && (
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider shadow-sm 
-                                                    ${product.stock > 0 ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'}`}>
+                                                    ${product.stock > 0 ? 'bg-white/90 text-green-700' : 'bg-white/90 text-red-700'}`}>
                                                     {product.stock > 0 ? `${product.stock} In Stock` : 'Out of Stock'}
                                                 </span>
                                             )}
@@ -196,17 +211,59 @@ export default function StorefrontPage() {
 
                                     {/* Action Area */}
                                     <div className="pt-3 border-t border-[var(--border-default)]">
-                                        <Button
-                                            variant={product.stock === 0 ? "ghost" : "secondary"}
-                                            fullWidth
-                                            disabled={product.stock === 0}
-                                            className="glass transition-colors group-hover:bg-[var(--primary-50)] group-hover:border-[var(--primary-200)] group-hover:text-[var(--primary-700)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                            </svg>
-                                            {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-                                        </Button>
+                                        {(() => {
+                                            const cartItem = cartItems.find(item => item.product_id === product._id);
+                                            if (cartItem) {
+                                                return (
+                                                    <div className="flex items-center justify-between border border-[var(--primary-200)] rounded-[var(--radius-sm)] bg-[var(--primary-50)] overflow-hidden h-10 w-full">
+                                                        <button
+                                                            onClick={() => {
+                                                                if (cartItem.quantity === 1) {
+                                                                    removeFromCart(product._id);
+                                                                } else {
+                                                                    updateQuantity(product._id, cartItem.quantity - 1);
+                                                                }
+                                                            }}
+                                                            className="flex-1 h-full flex items-center justify-center text-[var(--primary-700)] hover:bg-[var(--primary-100)] transition-colors active:bg-[var(--primary-200)]"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 12H4" /></svg>
+                                                        </button>
+                                                        <span className="px-4 text-sm font-bold text-[var(--primary-900)]">
+                                                            {cartItem.quantity}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateQuantity(product._id, cartItem.quantity + 1)}
+                                                            disabled={cartItem.quantity >= product.stock}
+                                                            className="flex-1 h-full flex items-center justify-center text-[var(--primary-700)] hover:bg-[var(--primary-100)] transition-colors active:bg-[var(--primary-200)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <Button
+                                                    variant={product.stock === 0 ? "ghost" : "secondary"}
+                                                    fullWidth
+                                                    disabled={product.stock === 0}
+                                                    onClick={() => addToCart({
+                                                        product_id: product._id,
+                                                        quantity: 1,
+                                                        name: product.name,
+                                                        price: product.price,
+                                                        image_url: product.image_url,
+                                                        stock: product.stock
+                                                    }, 1)}
+                                                    className="glass transition-colors group-hover:bg-[var(--primary-50)] group-hover:border-[var(--primary-200)] group-hover:text-[var(--primary-700)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                    </svg>
+                                                    {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                                                </Button>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </Card>

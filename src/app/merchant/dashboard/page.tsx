@@ -15,6 +15,7 @@ export default function MerchantDashboard() {
   const [store, setStore] = useState<any>(null);
   const [storeName, setStoreName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
 
   const [publishing, setPublishing] = useState(false);
   const [loadingStore, setLoadingStore] = useState(true);
@@ -34,7 +35,18 @@ export default function MerchantDashboard() {
     fetch("/api/store/me")
       .then((res) => res.json())
       .then((data) => {
-        if (data?._id) setStore(data);
+        if (data?._id) {
+            setStore(data);
+            // Fetch orders for this store
+            fetch("/api/order/store-orders")
+            .then(res => res.ok ? res.json() : [])
+            .then(orderData => {
+                if (Array.isArray(orderData)) {
+                    setOrders(orderData);
+                }
+            })
+            .catch(err => console.error("Error fetching orders:", err));
+        }
       })
       .catch((err) => console.error(err))
       .finally(() => setLoadingStore(false));
@@ -173,7 +185,8 @@ export default function MerchantDashboard() {
             </div>
           </Card>
         ) : (
-          /* Store Info Card */
+          <>
+          {/* Store Info Card */}
           <Card padding="lg">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
@@ -208,6 +221,44 @@ export default function MerchantDashboard() {
               </Button>
             )}
           </Card>
+          
+          {/* Orders Section */}
+          <div className="mt-8 animate-fade-in">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Recent Orders</h2>
+            {orders.length > 0 ? (
+                <div className="space-y-4">
+                    {orders.map(order => (
+                        <Card key={order._id} padding="md" className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center border-b border-[var(--border-default)] pb-2">
+                                <span className="font-mono text-sm font-bold text-[var(--primary-700)]">
+                                    #{order._id.substring(order._id.length - 8).toUpperCase()}
+                                </span>
+                                <span className="text-xs text-[var(--text-secondary)]">
+                                    {new Date(order.created_at).toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {order.items.map((item: any, idx: number) => (
+                                    <div key={idx} className="flex justify-between text-sm">
+                                        <span className="text-[var(--text-primary)]">{item.quantity}x {item.name || "Product"}</span>
+                                        <span className="text-[var(--text-secondary)]">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-[var(--border-default)]">
+                                <Badge variant="success" dot>{order.status}</Badge>
+                                <span className="font-bold text-[var(--text-primary)]">Total: ₹{order.total_amount.toFixed(2)}</span>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <Card padding="md" className="text-center">
+                    <p className="text-[var(--text-secondary)] text-sm">No orders yet.</p>
+                </Card>
+            )}
+          </div>
+          </>
         )}
       </main>
     </div>

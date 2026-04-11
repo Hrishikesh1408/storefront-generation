@@ -81,7 +81,7 @@ export default function ProductCardComponent({
                 ₹{product.price}
               </span>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider shadow-sm 
-                ${(product.stock || 0) > 0 ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'}`}>
+                ${(product.stock || 0) > 0 ? 'bg-white/90 text-green-700' : 'bg-white/90 text-red-700'}`}>
                 {product.stock || 0} In Stock
               </span>
             </div>
