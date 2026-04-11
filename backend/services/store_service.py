@@ -87,7 +87,7 @@ async def select_products_for_store(user_id: str, product_ids: list) -> bool:
     Returns:
         bool: True if updated successfully.
     """
-    update_fields = {f"products.{pid}": True for pid in product_ids}
+    update_fields = {f"products.{pid}": {} for pid in product_ids}
     result = await store_collection.update_one(
         {"owner_id": ObjectId(user_id)},
         {"$set": update_fields}
@@ -159,6 +159,12 @@ async def update_product_price_in_store(user_id: str, product_id: str, price: fl
     Returns:
         bool: True if updated successfully, False otherwise.
     """
+    # First, handle case where it might be a boolean (legacy)
+    await store_collection.update_one(
+        {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$not": {"$type": "object"}}},
+        {"$set": {f"products.{product_id}": {}}}
+    )
+
     result = await store_collection.update_one(
         {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
         {"$set": {f"products.{product_id}.price": price}}
@@ -177,6 +183,12 @@ async def update_product_stock_in_store(user_id: str, product_id: str, stock: in
     Returns:
         bool: True if updated successfully, False otherwise.
     """
+    # First, handle case where it might be a boolean (legacy)
+    await store_collection.update_one(
+        {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$not": {"$type": "object"}}},
+        {"$set": {f"products.{product_id}": {}}}
+    )
+
     result = await store_collection.update_one(
         {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
         {"$set": {f"products.{product_id}.stock": stock}}

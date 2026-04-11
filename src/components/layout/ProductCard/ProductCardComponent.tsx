@@ -9,20 +9,25 @@ interface ProductCardComponentProps {
     name: string;
     description: string;
     price: number;
+    stock?: number;
     image_url: string;
     selected?: boolean;
   };
   toggleSelection: (productId: string, currentStatus: boolean) => void;
   updatePrice?: (productId: string, newPrice: number) => Promise<void>;
+  updateStock?: (productId: string, newStock: number) => Promise<void>;
 }
 
 export default function ProductCardComponent({
   product,
   toggleSelection,
   updatePrice,
+  updateStock,
 }: ProductCardComponentProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [isEditingStock, setIsEditingStock] = useState(false);
   const [newPrice, setNewPrice] = useState(product.price.toString());
+  const [newStock, setNewStock] = useState((product.stock || 0).toString());
   const [loading, setLoading] = useState(false);
 
   const handlePriceUpdate = async () => {
@@ -33,7 +38,23 @@ export default function ProductCardComponent({
     setLoading(true);
     try {
       await updatePrice(product._id, priceValue);
-      setIsEditing(false);
+      setIsEditingPrice(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStockUpdate = async () => {
+    if (!updateStock) return;
+    const stockValue = parseInt(newStock);
+    if (isNaN(stockValue)) return alert("Please enter a valid stock count");
+
+    setLoading(true);
+    try {
+      await updateStock(product._id, stockValue);
+      setIsEditingStock(false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,11 +74,15 @@ export default function ProductCardComponent({
             height={300}
             className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          {/* Price badge overlay */}
-          {!isEditing && (
-            <div className="absolute bottom-3 left-3">
+          {/* Price and Stock badge overlay */}
+          {(!isEditingPrice && !isEditingStock) && (
+            <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
               <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-full)] bg-white/90 backdrop-blur-sm text-sm font-semibold text-[var(--text-primary)] shadow-sm">
                 ₹{product.price}
+              </span>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider shadow-sm 
+                ${(product.stock || 0) > 0 ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'}`}>
+                {product.stock || 0} In Stock
               </span>
             </div>
           )}
@@ -77,20 +102,35 @@ export default function ProductCardComponent({
           {product.description}
         </p>
 
-        {product.selected && updatePrice && !isEditing && (
-          <button
-            onClick={() => {
-              setIsEditing(true);
-              setNewPrice(product.price.toString());
-            }}
-            className="text-[var(--primary-600)] hover:text-[var(--primary-700)] text-[10px] font-bold uppercase tracking-wider shrink-0"
-          >
-            Edit Price
-          </button>
+        {product.selected && !isEditingPrice && !isEditingStock && (
+          <div className="flex gap-4 mb-3">
+            {updatePrice && (
+              <button
+                onClick={() => {
+                  setIsEditingPrice(true);
+                  setNewPrice(product.price.toString());
+                }}
+                className="text-[var(--primary-600)] hover:text-[var(--primary-700)] text-[10px] font-bold uppercase tracking-wider shrink-0"
+              >
+                Edit Price
+              </button>
+            )}
+            {updateStock && (
+              <button
+                onClick={() => {
+                  setIsEditingStock(true);
+                  setNewStock((product.stock || 0).toString());
+                }}
+                className="text-[var(--primary-600)] hover:text-[var(--primary-700)] text-[10px] font-bold uppercase tracking-wider shrink-0"
+              >
+                Edit Stock
+              </button>
+            )}
+          </div>
         )}
 
-        {/* Price Editor Overlay or Fallback */}
-        {isEditing ? (
+        {/* Price Editor Overlay */}
+        {isEditingPrice && (
           <div className="mb-4 p-3 bg-[var(--neutral-50)] rounded-[var(--radius-sm)] border border-[var(--border-default)] animate-in fade-in slide-in-from-top-2 duration-200">
             <label className="block text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)] mb-1">
               Store Specific Price
@@ -105,30 +145,57 @@ export default function ProductCardComponent({
                 placeholder="29.99"
                 autoFocus
               />
-              <button
-                onClick={handlePriceUpdate}
-                disabled={loading}
-                className="px-3 py-1 bg-[var(--primary-600)] text-white text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-[var(--primary-700)] disabled:opacity-50 whitespace-nowrap"
-              >
-                {loading ? "..." : "Save"}
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditing(false);
-                  setNewPrice(product.price.toString());
-                }}
-                className="px-3 py-1 border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-white"
-              >
-                Cancel
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePriceUpdate}
+                  disabled={loading}
+                  className="flex-1 px-3 py-1 bg-[var(--primary-600)] text-white text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-[var(--primary-700)] disabled:opacity-50 whitespace-nowrap"
+                >
+                  {loading ? "..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setIsEditingPrice(false)}
+                  className="flex-1 px-3 py-1 border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-white"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        ) : (
-          !product.image_url && (
-            <div className="text-lg font-bold text-[var(--text-primary)] mb-3">
-              ${product.price}
+        )}
+
+        {/* Stock Editor Overlay */}
+        {isEditingStock && (
+          <div className="mb-4 p-3 bg-[var(--neutral-50)] rounded-[var(--radius-sm)] border border-[var(--border-default)] animate-in fade-in slide-in-from-top-2 duration-200">
+            <label className="block text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)] mb-1">
+              Store Stock level
+            </label>
+            <div className="flex flex-col gap-2">
+              <input
+                type="number"
+                value={newStock}
+                onChange={(e) => setNewStock(e.target.value)}
+                className="w-full px-2 py-1 text-sm border border-[var(--border-default)] rounded-[var(--radius-xs)] focus:ring-1 focus:ring-[var(--primary-400)] outline-none bg-white"
+                placeholder="10"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleStockUpdate}
+                  disabled={loading}
+                  className="flex-1 px-3 py-1 bg-[var(--primary-600)] text-white text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-[var(--primary-700)] disabled:opacity-50 whitespace-nowrap"
+                >
+                  {loading ? "..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setIsEditingStock(false)}
+                  className="flex-1 px-3 py-1 border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-semibold rounded-[var(--radius-xs)] hover:bg-white"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          )
+          </div>
         )}
 
         {/* Toggle Switch */}

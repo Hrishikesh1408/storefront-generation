@@ -49,11 +49,14 @@ export default function ProductsPage() {
         // Map selected state from store.products (field is products: { [id]: true | {price: N} })
         const mapped = allCategoryProducts.map((p: any) => {
           const override = currentStore.products && currentStore.products[p._id];
-          const hasOverridePrice = override && typeof override === "object" && override.price !== undefined;
+          const isObject = override && typeof override === "object";
+          const hasOverridePrice = isObject && override.price !== undefined;
+          const hasOverrideStock = isObject && override.stock !== undefined;
           
           return {
             ...p,
             price: hasOverridePrice ? override.price : p.price,
+            stock: hasOverrideStock ? override.stock : 0,
             selected: !!override
           };
         });
@@ -125,13 +128,47 @@ export default function ProductsPage() {
       setStore((prev: any) => {
         const newProductsMap = { ...(prev.products || {}) };
         if (newProductsMap[productId]) {
-          newProductsMap[productId] = { price: newPrice };
+          const current = typeof newProductsMap[productId] === "object" ? newProductsMap[productId] : {};
+          newProductsMap[productId] = { ...current, price: newPrice };
         }
         return { ...prev, products: newProductsMap };
       });
       
     } catch (err) {
       console.error("Error updating price:", err);
+      throw err;
+    }
+  };
+
+  const updateProductStock = async (productId: string, newStock: number) => {
+    try {
+      const res = await fetch("/api/store/product/stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, stock: newStock }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update product stock");
+      }
+
+      // Update local products state
+      setProducts((prev) =>
+        prev.map((p) => (p._id === productId ? { ...p, stock: newStock } : p))
+      );
+
+      // Update store state for consistency
+      setStore((prev: any) => {
+        const newProductsMap = { ...(prev.products || {}) };
+        if (newProductsMap[productId]) {
+          const current = typeof newProductsMap[productId] === "object" ? newProductsMap[productId] : {};
+          newProductsMap[productId] = { ...current, stock: newStock };
+        }
+        return { ...prev, products: newProductsMap };
+      });
+      
+    } catch (err) {
+      console.error("Error updating stock:", err);
       throw err;
     }
   };
@@ -229,6 +266,7 @@ export default function ProductsPage() {
                 product={product}
                 toggleSelection={toggleSelection}
                 updatePrice={updateProductPrice}
+                updateStock={updateProductStock}
               />
             ))}
           </div>

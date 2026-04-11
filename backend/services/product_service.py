@@ -46,13 +46,21 @@ async def get_store_selected_products(store_id: str) -> list:
     if not store or not store.get("products"):
         return []
 
-    product_ids = [ObjectId(pid) for pid in store["products"].keys()]
+    product_ids = []
+    for pid in store["products"].keys():
+        try:
+            product_ids.append(ObjectId(pid))
+        except:
+            product_ids.append(pid)
     products = []
     async for p in products_collection.find({"_id": {"$in": product_ids}}):
         p["_id"] = str(p["_id"])
         override = store["products"].get(p["_id"])
-        if isinstance(override, dict) and "price" in override:
-            p["price"] = override["price"]
+        if isinstance(override, dict):
+            if "price" in override:
+                p["price"] = override["price"]
+            if "stock" in override:
+                p["stock"] = override["stock"]
         products.append(p)
     return products
 

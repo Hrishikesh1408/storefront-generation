@@ -153,11 +153,17 @@ export default function StorefrontPage() {
                                             height={300}
                                             className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
-                                        {/* Price badge overlay */}
-                                        <div className="absolute bottom-3 left-3">
+                                        {/* Price and Stock badge overlay */}
+                                        <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-full)] bg-white/90 backdrop-blur-sm text-sm font-semibold text-[var(--text-primary)] shadow-sm">
-                                                ${product.price}
+                                                ₹{product.price}
                                             </span>
+                                            {product.stock !== undefined && (
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider shadow-sm 
+                                                    ${product.stock > 0 ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'}`}>
+                                                    {product.stock > 0 ? `${product.stock} In Stock` : 'Out of Stock'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
@@ -165,10 +171,16 @@ export default function StorefrontPage() {
                                         <svg className="w-16 h-16 text-[var(--neutral-300)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <div className="absolute bottom-3 left-3">
+                                        <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-full)] bg-white/90 backdrop-blur-sm text-sm font-semibold text-[var(--text-primary)] shadow-sm">
-                                                ${product.price}
+                                                ₹{product.price}
                                             </span>
+                                            {product.stock !== undefined && (
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider shadow-sm 
+                                                    ${product.stock > 0 ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'}`}>
+                                                    {product.stock > 0 ? `${product.stock} In Stock` : 'Out of Stock'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -184,11 +196,16 @@ export default function StorefrontPage() {
 
                                     {/* Action Area */}
                                     <div className="pt-3 border-t border-[var(--border-default)]">
-                                        <Button variant="secondary" fullWidth className="glass transition-colors group-hover:bg-[var(--primary-50)] group-hover:border-[var(--primary-200)] group-hover:text-[var(--primary-700)]">
+                                        <Button
+                                            variant={product.stock === 0 ? "ghost" : "secondary"}
+                                            fullWidth
+                                            disabled={product.stock === 0}
+                                            className="glass transition-colors group-hover:bg-[var(--primary-50)] group-hover:border-[var(--primary-200)] group-hover:text-[var(--primary-700)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
                                             <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                             </svg>
-                                            Add to Cart
+                                            {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
                                         </Button>
                                     </div>
                                 </div>

@@ -18,6 +18,7 @@ from services.store_service import (
     get_store_by_id,
     get_all_active_stores,
     update_product_price_in_store,
+    update_product_stock_in_store,
 )
 from services.category_service import get_category_values
 
@@ -126,3 +127,14 @@ async def update_product_price(data: dict, user=Depends(verify_jwt)):
         raise HTTPException(status_code=400, detail="Failed to update product price")
     
     return {"message": "Product price updated successfully"}
+
+@router.post("/store/product/stock")
+async def update_product_stock(data: dict, user=Depends(verify_jwt)):
+    """
+    Updates the stock count of a product in the store.
+    """
+    success = await update_product_stock_in_store(user["user_id"], data["product_id"], data["stock"])
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update product stock")
+    
+    return {"message": "Product stock updated successfully"}
