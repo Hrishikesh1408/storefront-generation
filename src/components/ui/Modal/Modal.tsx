@@ -6,6 +6,7 @@ type ModalProps = {
   onSave?: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   size?: "sm" | "md" | "lg";
 };
 
@@ -14,6 +15,7 @@ export default function Modal({
   onClose,
   title,
   children,
+  footer,
   size = "md",
 }: ModalProps) {
   if (!isOpen) return null;
@@ -40,11 +42,10 @@ export default function Modal({
           shadow-[var(--shadow-xl)]
           flex flex-col
           animate-scale-in
-          overflow-hidden
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)] shrink-0">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">
             {title}
           </h2>
@@ -66,7 +67,14 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-auto">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="px-6 py-4 border-t border-[var(--border-default)] flex items-center justify-between gap-3 bg-[var(--neutral-50,#f9fafb)] shrink-0 rounded-b-[var(--radius-lg)]">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import Badge from "@/src/components/ui/Badge/Badge";
 import Spinner from "@/src/components/ui/Spinner/Spinner";
 import EmptyState from "@/src/components/ui/EmptyState/EmptyState";
 import ProfileDropdown from "@/src/components/auth/ProfileDropdown";
+import OrderModal, { Order } from "@/src/components/user/OrderModal/OrderModal";
 
 interface Store {
   _id: string;
@@ -21,9 +22,10 @@ interface Store {
 
 export default function UserDashboard() {
   const [stores, setStores] = useState<Store[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'stores' | 'orders'>('stores');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -159,9 +161,12 @@ export default function UserDashboard() {
                       <div className="font-bold text-[var(--text-primary)]">₹{order.total_amount.toFixed(2)}</div>
                     </div>
                     <Badge variant="success" dot>{order.status}</Badge>
-                    <Link href={`/store/${order.store_id}`} className="text-sm font-medium text-[var(--primary-600)] hover:underline">
-                      View Store &rarr;
-                    </Link>
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-sm font-medium text-[var(--primary-600)] hover:underline transition-all"
+                    >
+                      View Order →
+                    </button>
                   </div>
                 </Card>
               ))}
@@ -176,6 +181,11 @@ export default function UserDashboard() {
           )
         )}
       </main>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      )}
     </div>
   );
 }
