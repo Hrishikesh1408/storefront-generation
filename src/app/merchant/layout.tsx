@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import logo from "@/src/assets/images/newturbifylogo.png";
+import logo from "@/src/app/favicon.ico";
 import ProfileDropdown from "@/src/components/auth/ProfileDropdown";
 
 const navItems = [
@@ -50,7 +50,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
               <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
-          <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
+          <Image src={logo} alt="NextStore" className="w-12 h-auto" priority />
         </div>
 
         <ProfileDropdown />
@@ -88,10 +88,9 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
                     text-sm font-medium
                     transition-all duration-200
                     group relative
-                    ${
-                      isActive
-                        ? "bg-[var(--primary-50)] text-[var(--primary-700)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--neutral-100)] hover:text-[var(--text-primary)]"
+                    ${isActive
+                      ? "bg-[var(--primary-50)] text-[var(--primary-700)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--neutral-100)] hover:text-[var(--text-primary)]"
                     }
                   `}
                 >

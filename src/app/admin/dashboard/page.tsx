@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import logo from "@/src/assets/images/newturbifylogo.png";
+import logo from "@/src/app/favicon.ico";
 import Input from "@/src/components/ui/TextInput/InputComponent";
 import Button from "@/src/components/ui/Button/ButtonComponent";
 import Badge from "@/src/components/ui/Badge/Badge";
@@ -204,7 +204,7 @@ export default function Page() {
     <div className="min-h-screen bg-[var(--bg-body)] flex flex-col">
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-[var(--border-default)] bg-white/80 backdrop-blur-md sticky top-0 z-30">
-        <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
+        <Image src={logo} alt="NextStore" className="w-12 h-auto" priority />
         <div className="flex items-center gap-4">
           <Badge variant="info" dot>Admin</Badge>
           <ProfileDropdown />

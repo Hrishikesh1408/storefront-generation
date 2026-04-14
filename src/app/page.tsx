@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import logo from "@/src/assets/images/newturbifylogo.png";
+import logo from "@/src/app/favicon.ico";
 import Button from "@/src/components/ui/Button/ButtonComponent";
 import { useRouter } from "next/navigation";
 
@@ -13,7 +13,7 @@ export default function LandingPage() {
       {/* Floating Header */}
       <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
+          <Image src={logo} alt="NextStore" className="w-12 h-auto" priority />
           <Button
             onClick={() => router.push("/user/signin")}
             size="sm"
@@ -74,7 +74,7 @@ export default function LandingPage() {
                 </svg>
               </Button>
               <Button
-                onClick={() => {}}
+                onClick={() => { }}
                 variant="ghost"
                 size="lg"
                 className="text-[var(--neutral-300)] hover:text-white hover:bg-white/10"

@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Turbify — AI-Powered Storefront Generation",
+  title: "NextStore — AI-Powered Storefront Generation",
   description:
-    "Create and manage your AI-powered storefront with Turbify. Generate products, customize your store, and go live in minutes.",
+    "Create and manage your AI-powered storefront with NextStore. Generate products, customize your store, and go live in minutes.",
 };
 
 export default function RootLayout({

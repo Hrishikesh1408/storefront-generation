@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logo from "@/src/assets/images/newturbifylogo.png";
+import logo from "@/src/app/favicon.ico";
 import GoogleLoginButton from "@/src/components/auth/GoogleLoginButton";
 
 export default function SignInPage() {
@@ -12,12 +12,12 @@ export default function SignInPage() {
         <div className="absolute -bottom-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-3xl" />
 
         <div className="relative flex flex-col items-center justify-center w-full px-12">
-          <Image src={logo} alt="Turbify" className="w-36 h-auto mb-8" priority />
+          <Image src={logo} alt="NextStore" className="w-12 h-auto mb-8" priority />
           <h2 className="text-3xl font-bold text-white text-center mb-4">
-            Welcome to Turbify
+            Welcome to NextStore
           </h2>
           <p className="text-[var(--neutral-400)] text-center max-w-sm leading-relaxed">
-            Build your AI-powered storefront and start selling in minutes. 
+            Build your AI-powered storefront and start selling in minutes.
             Sign in to manage your products and grow your business.
           </p>
         </div>
@@ -27,7 +27,7 @@ export default function SignInPage() {
       <div className="flex-1 flex flex-col bg-[var(--bg-body)]">
         {/* Mobile logo */}
         <div className="lg:hidden px-6 py-4">
-          <Image src={logo} alt="Turbify" className="w-28 h-auto" priority />
+          <Image src={logo} alt="NextStore" className="w-28 h-auto" priority />
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-12">
