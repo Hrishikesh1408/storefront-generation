@@ -76,7 +76,7 @@ export default function CategoryProductsModal({ category, isOpen, onClose }: Pro
                     {product.description}
                   </p>
                   <p className="mt-2 font-bold text-gray-900 border-t border-gray-50 pt-2 text-sm">
-                    ${product.price?.toFixed(2)}
+                    ₹{product.price?.toFixed(2)}
                   </p>
                 </div>
               </div>
