@@ -362,7 +362,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=<google-oauth-client-id>
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone git@github.com:Hrishikesh1408/storefront-generation.git
 cd storefront-generation
 ```
 
