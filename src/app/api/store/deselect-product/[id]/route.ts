@@ -13,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/store/deselect-product/${productId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/store/deselect-product/${productId}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

@@ -178,7 +178,13 @@ async def _scrape_and_transform(urls: List[str], max_urls: int = 8) -> str:
 
 _RAG_SYSTEM_PROMPT = """You are a product catalog curator for an e-commerce storefront.
 
-TASK: Generate a curated list of 15-25 UNIQUE products for the "{category}" category.
+STORE CONTEXT:
+Name: {store_name}
+Category: {category}
+Description: {store_description}
+Merchant Request: {merchant_prompt}
+
+TASK: Generate a curated, PERSONALIZED list of 15-25 UNIQUE products for this specific store based on the context and merchant request.
 
 REFERENCE DATA (from real websites — use this to ground your output):
 {context}
@@ -199,7 +205,7 @@ STRICT RULES:
 
 
 async def _extract_products(
-    context: str, category: str
+    context: str, category: str, store_name: str, store_description: str, merchant_prompt: str
 ) -> List[dict]:
     """
     Uses a LangChain chain (prompt + ChatOllama + JsonOutputParser) to
@@ -208,6 +214,9 @@ async def _extract_products(
     Args:
         context: Aggregated scraped text.
         category: The product category.
+        store_name: Name of the store.
+        store_description: Description of the store.
+        merchant_prompt: The specific request from the merchant.
 
     Returns:
         List of product dicts.
@@ -225,9 +234,12 @@ async def _extract_products(
     chain = prompt | model | parser
 
     try:
-        logger.info(f"Invoking LangChain extraction chain for '{category}'...")
+        logger.info(f"Invoking LangChain extraction chain for store '{store_name}' in category '{category}'...")
         result = await chain.ainvoke({
             "category": category,
+            "store_name": store_name,
+            "store_description": store_description,
+            "merchant_prompt": merchant_prompt,
             "context": context,
             "format_instructions": parser.get_format_instructions(),
         })
@@ -251,7 +263,7 @@ async def _extract_products(
 # ──────────────────────────────────────────────
 
 async def run_web_retrieval(
-    category_label: str, category_value: str
+    category_label: str, category_value: str, store_name: str, store_description: str, merchant_prompt: str
 ) -> WebAgentResult:
     """
     Runs the full deterministic LangChain web retrieval pipeline.
@@ -261,6 +273,9 @@ async def run_web_retrieval(
     Args:
         category_label: Human-readable category (e.g. "Bakery").
         category_value: Normalized slug (e.g. "bakery").
+        store_name: Name of the store.
+        store_description: Description of the store.
+        merchant_prompt: The specific request from the merchant.
 
     Returns:
         WebAgentResult with extracted products and pipeline stats.
@@ -287,8 +302,8 @@ async def run_web_retrieval(
         return result
 
     # ── Step 3: RAG Extract ──
-    logger.info(f"[LangChain Agent] Step 3/3: Extracting products via LLM...")
-    products = await _extract_products(context, category_label)
+    logger.info(f"[LangChain Agent] Step 3/3: Extracting personalized products via LLM...")
+    products = await _extract_products(context, category_label, store_name, store_description, merchant_prompt)
 
     # Tag each product with the normalized category
     for p in products:

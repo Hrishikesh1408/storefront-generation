@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const authHeader = req.headers.get("Authorization") || `Bearer ${req.cookies.get("token")?.value}`;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/products/manual`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/manual`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -3,7 +3,12 @@ Store Operations Service.
 
 Handles database operations related to merchants' storefronts.
 """
+import asyncio
 from bson import ObjectId
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from services.ollama_service import get_chat_model
 
 from db.mongo import db
 from models.store_model import create_store_document
@@ -11,32 +16,65 @@ from models.store_model import create_store_document
 store_collection = db["stores"]
 
 
-async def find_or_create_store(user_id: str, data: dict) -> dict:
-    """
-    Retrieves an existing store for a user or creates a new one if it doesn't exist.
+class StoreDetails(BaseModel):
+    name: str = Field(description="A catchy, appropriate name for the store")
+    category: str = Field(description="The primary category (e.g. bakery, clothing, electronics, restaurant)")
+    description: str = Field(description="A brief description of the store and what it sells")
+
+async def deduce_store_details(prompt: str) -> dict | None:
+    """Uses LLM to deduce store name, category, and description from a prompt."""
+    parser = JsonOutputParser(pydantic_object=StoreDetails)
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful assistant that parses merchant requests into structured store details.\n{format_instructions}"),
+        ("human", "Extract the store details from this request: {prompt}")
+    ])
+    model = get_chat_model(temperature=0.2)
+    chain = prompt_template | model | parser
+    try:
+        result = await chain.ainvoke({
+            "prompt": prompt,
+            "format_instructions": parser.get_format_instructions()
+        })
+        return result
+    except Exception as e:
+        print(f"Error deducing store details: {e}")
+        return None
+
+async def create_store_from_prompt(user_id: str, store_details: dict) -> dict:
+    """Creates a new store and triggers background product generation."""
+    new_store = create_store_document(user_id, store_details)
     
-    Args:
-        user_id (str): Database ID of the user.
-        data (dict): Store configuration data.
-        
-    Returns:
-        dict: The store document with stringified ObjectIds.
-    """
-    store = await store_collection.find_one({"owner_id": ObjectId(user_id)})
-
-    if store:
-        store["_id"] = str(store["_id"])
-        store["owner_id"] = str(store["owner_id"])
-        return store
-
-    new_store = create_store_document(user_id, data)
+    # Store prompt for reference if available
+    if "prompt" in store_details:
+        new_store["merchant_prompt"] = store_details["prompt"]
 
     result = await store_collection.insert_one(new_store)
-
-    new_store["_id"] = str(result.inserted_id)
+    store_id = str(result.inserted_id)
+    new_store["_id"] = store_id
     new_store["owner_id"] = str(new_store["owner_id"])
 
+    # Trigger background product generation
+    from services.product_generation_service import generate_store_products
+    asyncio.create_task(generate_store_products(store_id, store_details))
+
     return new_store
+
+async def update_store_details(user_id: str, data: dict) -> dict | None:
+    """Updates the store's basic details."""
+    result = await store_collection.find_one_and_update(
+        {"owner_id": ObjectId(user_id)},
+        {"$set": {
+            "name": data.get("name"),
+            "category": data.get("category"),
+            "description": data.get("description")
+        }},
+        return_document=True
+    )
+    if result:
+        result["_id"] = str(result["_id"])
+        result["owner_id"] = str(result["owner_id"])
+        return result
+    return None
 
 
 async def get_store_by_user(user_id: str) -> dict | None:
@@ -76,41 +114,7 @@ async def publish_store(user_id: str) -> bool:
     return result.modified_count > 0
 
 
-async def select_products_for_store(user_id: str, product_ids: list) -> bool:
-    """
-    Adds product IDs to the store's products map.
 
-    Args:
-        user_id (str): Database ID of the store owner.
-        product_ids (list): List of product ID strings to add.
-
-    Returns:
-        bool: True if updated successfully.
-    """
-    update_fields = {f"products.{pid}": {} for pid in product_ids}
-    result = await store_collection.update_one(
-        {"owner_id": ObjectId(user_id)},
-        {"$set": update_fields}
-    )
-    return result.modified_count > 0
-
-
-async def deselect_product_from_store(user_id: str, product_id: str) -> bool:
-    """
-    Removes a product ID from the store's products map.
-
-    Args:
-        user_id (str): Database ID of the store owner.
-        product_id (str): The product ID to remove.
-
-    Returns:
-        bool: True if updated successfully.
-    """
-    result = await store_collection.update_one(
-        {"owner_id": ObjectId(user_id)},
-        {"$unset": {f"products.{product_id}": ""}}
-    )
-    return result.modified_count > 0
 
 async def get_store_by_id(store_id: str) -> dict | None:
     """
@@ -192,5 +196,23 @@ async def update_product_stock_in_store(user_id: str, product_id: str, stock: in
     result = await store_collection.update_one(
         {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
         {"$set": {f"products.{product_id}.stock": stock}}
+    )
+    return result.modified_count > 0
+
+async def update_product_visibility_in_store(user_id: str, product_id: str, selected: bool) -> bool:
+    """
+    Updates the visibility status of a product in the store.
+    
+    Args:
+        user_id (str): Database ID of the user.
+        product_id (str): Database ID of the product.
+        selected (bool): The new visibility status.
+        
+    Returns:
+        bool: True if updated successfully, False otherwise.
+    """
+    result = await store_collection.update_one(
+        {"owner_id": ObjectId(user_id), f"products.{product_id}": {"$exists": True}},
+        {"$set": {f"products.{product_id}.selected": selected}}
     )
     return result.modified_count > 0

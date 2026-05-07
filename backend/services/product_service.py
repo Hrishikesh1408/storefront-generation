@@ -35,40 +35,31 @@ async def get_products_by_category(category_value: str) -> list:
 async def get_store_selected_products(store_id: str) -> list:
     """
     Retrieves the actual product documents that a store has selected.
+    In the new personalized model, products are stored directly inside the store document.
 
     Args:
         store_id (str): The store's ObjectId string.
 
     Returns:
-        list: A list of product documents the store has selected.
+        list: A list of product documents for the store.
     """
     store = await stores_collection.find_one({"_id": ObjectId(store_id)})
     if not store or not store.get("products"):
         return []
 
-    product_ids = []
-    for pid in store["products"].keys():
-        try:
-            product_ids.append(ObjectId(pid))
-        except:
-            product_ids.append(pid)
     products = []
-    async for p in products_collection.find({"_id": {"$in": product_ids}}):
-        p["_id"] = str(p["_id"])
-        override = store["products"].get(p["_id"])
-        if isinstance(override, dict):
-            if "price" in override:
-                p["price"] = override["price"]
-            if "stock" in override:
-                p["stock"] = override["stock"]
-        products.append(p)
+    for pid, product_data in store["products"].items():
+        if isinstance(product_data, dict):
+            # Include the ID inside the product dictionary
+            product_data["_id"] = pid
+            products.append(product_data)
+            
     return products
 
 
 async def add_manual_product(store_id: str, data: dict) -> dict:
     """
-    Adds a custom product to the products collection and automatically
-    maps it to the store.
+    Adds a custom product directly to the store's products map.
 
     Args:
         store_id (str): The store's ObjectId string.
@@ -77,40 +68,42 @@ async def add_manual_product(store_id: str, data: dict) -> dict:
     Returns:
         dict: The inserted product document.
     """
-    # Get the store to know the category
     store = await stores_collection.find_one({"_id": ObjectId(store_id)})
     if not store:
         return {"error": "Store not found"}
 
+    import uuid
+    pid = str(uuid.uuid4())
+    
     product = {
+        "_id": pid,
         "category": store.get("category", ""),
         "name": data.get("name"),
         "description": data.get("description"),
         "price": float(data.get("price", 0)),
+        "stock": 10,
+        "selected": True,
         "image_url": data.get("image_url") or get_random_image(),
     }
-    result = await products_collection.insert_one(product)
-    product["_id"] = str(result.inserted_id)
+    
+    # Add to store's products map
+    await stores_collection.update_one(
+        {"_id": ObjectId(store_id)},
+        {
+            "$set": {
+                f"products.{pid}": product
+            }
+        }
+    )
 
     if not data.get("image_url") and product.get("name"):
         asyncio.create_task(
             generate_product_image_async(
                 product["name"],
                 product["category"],
-                product["_id"]
+                pid,
+                store_id
             )
         )
-
-
-    # Also add to store's products map and mark as draft
-    await stores_collection.update_one(
-        {"_id": ObjectId(store_id)},
-        {
-            "$set": {
-                f"products.{product['_id']}": True,
-                "status": "draft"
-            }
-        }
-    )
 
     return product

@@ -8,7 +8,7 @@ export async function DELETE(
     const params = await context.params;
     const id = params.id;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/categories/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, {
       method: "DELETE",
     });
 

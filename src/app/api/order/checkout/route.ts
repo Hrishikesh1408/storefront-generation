@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/order/checkout`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/checkout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

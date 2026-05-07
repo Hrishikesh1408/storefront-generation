@@ -31,7 +31,7 @@ export default function ProductsPage() {
       .then((data) => {
         if (data?._id) {
           setStore(data);
-          fetchProducts(data.category, data);
+          fetchProducts(data);
         } else {
           router.push("/merchant/dashboard");
         }
@@ -40,30 +40,17 @@ export default function ProductsPage() {
       .finally(() => setLoadingStore(false));
   }, [router]);
 
-  const fetchProducts = async (category: string, currentStore: any) => {
+  const fetchProducts = async (currentStore: any) => {
     setLoadingProducts(true);
     try {
-      const res = await fetch(`/api/product/by-category/${category}`);
+      const res = await fetch(`/api/product/store/${currentStore._id}`);
       if (res.ok) {
-        const allCategoryProducts = await res.json();
-        // Map selected state from store.products (field is products: { [id]: true | {price: N} })
-        const mapped = allCategoryProducts.map((p: any) => {
-          const override = currentStore.products && currentStore.products[p._id];
-          const isObject = override && typeof override === "object";
-          const hasOverridePrice = isObject && override.price !== undefined;
-          const hasOverrideStock = isObject && override.stock !== undefined;
-          
-          return {
-            ...p,
-            price: hasOverridePrice ? override.price : p.price,
-            stock: hasOverrideStock ? override.stock : 0,
-            selected: !!override
-          };
-        });
-        setProducts(mapped);
+        const storeProducts = await res.json();
+        // Since all products belong to the store, we just set them.
+        setProducts(storeProducts);
       }
     } catch (err) {
-      console.error("Error fetching category products:", err);
+      console.error("Error fetching store products:", err);
     }
     setLoadingProducts(false);
   };
@@ -76,25 +63,22 @@ export default function ProductsPage() {
     );
 
     try {
-      const url = nextStatus 
-        ? "/api/store/select-products" 
-        : `/api/store/deselect-product/${productId}`;
-      
-      const res = await fetch(url, {
+      const res = await fetch("/api/store/product/visibility", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: nextStatus ? JSON.stringify({ product_ids: [productId] }) : undefined,
+        body: JSON.stringify({ product_id: productId, selected: nextStatus }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to update selection");
+        throw new Error("Failed to update visibility");
       }
 
       // Update store state locally for consistency
       setStore((prev: any) => {
         const newProductsMap = { ...(prev.products || {}) };
-        if (nextStatus) newProductsMap[productId] = true;
-        else delete newProductsMap[productId];
+        if (newProductsMap[productId]) {
+          newProductsMap[productId] = { ...newProductsMap[productId], selected: nextStatus };
+        }
         return { ...prev, products: newProductsMap };
       });
 
@@ -194,13 +178,13 @@ export default function ProductsPage() {
         // Manual add in backend also updates store.products, so we need to update our store state
         setStore((prev: any) => ({
             ...prev,
-            products: { ...(prev.products || {}), [newProduct._id]: true }
+            products: { ...(prev.products || {}), [newProduct._id]: newProduct }
         }));
 
         // Refresh product list to include the new product
-        fetchProducts(store.category, {
+        fetchProducts({
             ...store,
-            products: { ...(store.products || {}), [newProduct._id]: true }
+            products: { ...(store.products || {}), [newProduct._id]: newProduct }
         });
 
         setIsModalOpen(false);

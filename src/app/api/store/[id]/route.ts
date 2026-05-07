@@ -4,7 +4,7 @@ export async function GET(req: NextRequest, context: any) {
   try {
     const params = await context.params;
     const id = params.id;
-    const response = await fetch(`${process.env.FASTAPI_URL}/store/${id}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/store/${id}`);
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {

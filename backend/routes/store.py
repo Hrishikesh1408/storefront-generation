@@ -10,15 +10,11 @@ from pydantic import BaseModel
 
 from services.jwt_service import verify_jwt
 from services.store_service import (
-    find_or_create_store,
     get_store_by_user,
     publish_store,
-    select_products_for_store,
-    deselect_product_from_store,
     get_store_by_id,
     get_all_active_stores,
     update_product_price_in_store,
-    update_product_stock_in_store,
 )
 from services.category_service import get_category_values
 
@@ -27,10 +23,14 @@ router = APIRouter()
 
 class StoreCreate(BaseModel):
     """Payload model for creating a store."""
-    name: str
-    category: str = None
-    description: str = None
+    prompt: str
     logo: Optional[str] = None
+
+class StoreUpdate(BaseModel):
+    """Payload model for updating a store."""
+    name: str
+    category: str
+    description: str
 
 
 class SelectProducts(BaseModel):
@@ -41,19 +41,34 @@ class SelectProducts(BaseModel):
 @router.post("/store/create")
 async def create_store(data: StoreCreate, user=Depends(verify_jwt)):
     """
-    Creates a new store for the authenticated merchant. 
-    Validates category against the categories collection and requires merchant role.
+    Creates a new store for the authenticated merchant from a prompt.
     """
-    allowed_categories = await get_category_values()
-
-    if data.category not in allowed_categories:
-        raise HTTPException(status_code=400, detail="Invalid category")
-
     if user["role"] != "merchant":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    store = await find_or_create_store(user["user_id"], data.model_dump())
+    from services.store_service import deduce_store_details, create_store_from_prompt
+    
+    # Fast LLM call to deduce name, description, category
+    store_details = await deduce_store_details(data.prompt)
+    if not store_details:
+        raise HTTPException(status_code=500, detail="Failed to deduce store details from prompt")
+    
+    store_details["prompt"] = data.prompt
+    store_details["logo"] = data.logo
 
+    store = await create_store_from_prompt(user["user_id"], store_details)
+
+    return store
+
+@router.post("/store/update")
+async def update_store(data: StoreUpdate, user=Depends(verify_jwt)):
+    """
+    Updates the store details for the authenticated merchant.
+    """
+    from services.store_service import update_store_details
+    store = await update_store_details(user["user_id"], data.model_dump())
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or update failed")
     return store
 
 
@@ -78,28 +93,7 @@ async def publish_my_store(user=Depends(verify_jwt)):
     return {"message": "Store published successfully"}
 
 
-@router.post("/store/select-products")
-async def select_store_products(data: SelectProducts, user=Depends(verify_jwt)):
-    """
-    Adds selected product IDs to the merchant's store.
-    """
-    success = await select_products_for_store(user["user_id"], data.product_ids)
-    if not success:
-        raise HTTPException(status_code=400, detail="Failed to update selected products")
-    
-    return {"message": "Products selected successfully"}
 
-
-@router.post("/store/deselect-product/{product_id}")
-async def deselect_store_product(product_id: str, user=Depends(verify_jwt)):
-    """
-    Removes a single product ID from the merchant's store.
-    """
-    success = await deselect_product_from_store(user["user_id"], product_id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Failed to deselect product")
-    
-    return {"message": "Product deselected successfully"}
 
 @router.get("/store/active/all")
 async def get_active_stores():
@@ -133,8 +127,21 @@ async def update_product_stock(data: dict, user=Depends(verify_jwt)):
     """
     Updates the stock count of a product in the store.
     """
+    from services.store_service import update_product_stock_in_store
     success = await update_product_stock_in_store(user["user_id"], data["product_id"], data["stock"])
     if not success:
         raise HTTPException(status_code=400, detail="Failed to update product stock")
     
     return {"message": "Product stock updated successfully"}
+
+@router.post("/store/product/visibility")
+async def update_product_visibility(data: dict, user=Depends(verify_jwt)):
+    """
+    Updates the visibility (selected status) of a product in the store.
+    """
+    from services.store_service import update_product_visibility_in_store
+    success = await update_product_visibility_in_store(user["user_id"], data["product_id"], data["selected"])
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update product visibility")
+    
+    return {"message": "Product visibility updated successfully"}

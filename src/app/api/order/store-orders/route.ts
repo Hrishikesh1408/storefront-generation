@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/order/store-orders`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/store-orders`, {
       cache: 'no-store',
       headers: { Authorization: `Bearer ${token}` },
     });

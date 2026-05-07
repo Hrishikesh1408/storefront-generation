@@ -5,6 +5,7 @@ import torch
 from db.mongo import db
 
 products_collection = db["products"]
+stores_collection = db["stores"]
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 # Note: loading the pipeline can take some time when the module is imported
@@ -12,8 +13,10 @@ print("Loading Stable Diffusion Pipeline...")
 pipe = StableDiffusionPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5"
 )
-pipe = pipe.to("cpu")
-print("Stable Diffusion Pipeline loaded.")
+# Use Apple Silicon GPU (MPS) if available, otherwise fallback to CPU
+device = "mps" if torch.backends.mps.is_available() else "cpu"
+pipe = pipe.to(device)
+print(f"Stable Diffusion Pipeline loaded on {device}.")
 
 
 def _generate_and_save_image_sync(product_name: str, category_value: str, product_id: str) -> str:
@@ -37,7 +40,7 @@ def _generate_and_save_image_sync(product_name: str, category_value: str, produc
     return f"{BASE_URL}/{url_path}"
 
 
-async def generate_product_image_async(product_name: str, category_value: str, product_id: str):
+async def generate_product_image_async(product_name: str, category_value: str, product_id: str, store_id: str = None):
     """
     Asynchronously generates an image for a product and updates the database.
     Since SD is CPU intensive and blocking, we run it in a thread pool.
@@ -50,18 +53,26 @@ async def generate_product_image_async(product_name: str, category_value: str, p
             product_id
         )
         
-        # Update the product in the database with the generated image URL
-        # Support both hash-based string IDs (from ingestion agent) and ObjectIds (legacy)
         from bson import ObjectId
-        try:
-            doc_id = ObjectId(product_id) if len(product_id) == 24 else product_id
-        except Exception:
-            doc_id = product_id
-        await products_collection.update_one(
-            {"_id": doc_id},
-            {"$set": {"image_url": image_url}}
-        )
-        print(f"Successfully generated and saved image for product {product_id} at {image_url}")
+        
+        if store_id:
+            # Update the image_url inside the specific store's products map
+            await stores_collection.update_one(
+                {"_id": ObjectId(store_id)},
+                {"$set": {f"products.{product_id}.image_url": image_url}}
+            )
+            print(f"Successfully generated and saved image for product {product_id} in store {store_id} at {image_url}")
+        else:
+            # Legacy fallback
+            try:
+                doc_id = ObjectId(product_id) if len(product_id) == 24 else product_id
+            except Exception:
+                doc_id = product_id
+            await products_collection.update_one(
+                {"_id": doc_id},
+                {"$set": {"image_url": image_url}}
+            )
+            print(f"Successfully generated and saved image for product {product_id} at {image_url}")
         
     except Exception as e:
         print(f"Failed to generate image for product {product_id}: {e}")

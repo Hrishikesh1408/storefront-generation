@@ -9,7 +9,7 @@ export async function GET(
     const user_id = params.user_id;
     const token = req.cookies.get("token")?.value;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/admin/store/${user_id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/store/${user_id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

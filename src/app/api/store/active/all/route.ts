@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const response = await fetch(`${process.env.FASTAPI_URL}/store/active/all`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/store/active/all`, {
       cache: "no-store",
     });
     const data = await response.json();

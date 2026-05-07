@@ -7,7 +7,7 @@ export async function GET(req: Request, context: any) {
     const token = cookieStore.get("token")?.value;
     if (!token) return NextResponse.json({}, { status: 401 });
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/cart/${context.params.store_id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/${context.params.store_id}`, {
       cache: 'no-store',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -29,7 +29,7 @@ export async function POST(req: Request, context: any) {
 
     const body = await req.json();
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/cart/${context.params.store_id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/${context.params.store_id}`, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",

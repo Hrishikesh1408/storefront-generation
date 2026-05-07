@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("token")?.value;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/store/me`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/store/me`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

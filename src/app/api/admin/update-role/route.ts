@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const backendRes = await fetch(
-      `${process.env.FASTAPI_URL}/admin/update-role`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/update-role`,
       {
         method: "POST",
         headers: {

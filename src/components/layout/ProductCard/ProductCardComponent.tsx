@@ -8,8 +8,6 @@ interface ProductCardComponentProps {
     _id: string;
     name: string;
     description: string;
-    price: number;
-    stock?: number;
     image_url: string;
     selected?: boolean;
   };
@@ -102,7 +100,7 @@ export default function ProductCardComponent({
           {product.description}
         </p>
 
-        {product.selected && !isEditingPrice && !isEditingStock && (
+        {!isEditingPrice && !isEditingStock && (
           <div className="flex gap-4 mb-3">
             {updatePrice && (
               <button

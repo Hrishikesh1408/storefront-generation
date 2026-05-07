@@ -6,6 +6,12 @@ Registers routers, sets up the ASGI application, and provides a health check end
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
+import ssl
+import certifi
+
+# Global SSL fix for macOS Python using certifi
+os.environ["SSL_CERT_FILE"] = certifi.where()
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 from db.mongo import users_collection
 from routes.admin import router as admin_router

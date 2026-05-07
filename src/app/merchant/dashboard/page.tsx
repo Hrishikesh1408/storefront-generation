@@ -13,14 +13,18 @@ import Spinner from "@/src/components/ui/Spinner/Spinner";
 export default function MerchantDashboard() {
   const router = useRouter();
   const [store, setStore] = useState<any>(null);
-  const [storeName, setStoreName] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
 
   const [publishing, setPublishing] = useState(false);
   const [loadingStore, setLoadingStore] = useState(true);
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
+  
+  // For editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [storeCategories, setStoreCategories] = useState<any[]>([]);
 
@@ -36,16 +40,19 @@ export default function MerchantDashboard() {
       .then((res) => res.json())
       .then((data) => {
         if (data?._id) {
-            setStore(data);
-            // Fetch orders for this store
-            fetch("/api/order/store-orders")
-            .then(res => res.ok ? res.json() : [])
-            .then(orderData => {
-                if (Array.isArray(orderData)) {
-                    setOrders(orderData);
-                }
+          setStore(data);
+          setEditName(data.name || "");
+          setEditCategory(data.category || "");
+          setEditDescription(data.description || "");
+          // Fetch orders for this store
+          fetch("/api/order/store-orders")
+            .then((res) => (res.ok ? res.json() : []))
+            .then((orderData) => {
+              if (Array.isArray(orderData)) {
+                setOrders(orderData);
+              }
             })
-            .catch(err => console.error("Error fetching orders:", err));
+            .catch((err) => console.error("Error fetching orders:", err));
         }
       })
       .catch((err) => console.error(err))
@@ -67,8 +74,7 @@ export default function MerchantDashboard() {
   };
 
   const handleCreate = async () => {
-    if (!storeName) return alert("Enter store name");
-    if (!category) return alert("Select category");
+    if (!prompt) return alert("Please describe your store");
 
     setLoading(true);
     try {
@@ -76,18 +82,47 @@ export default function MerchantDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: storeName,
-          category,
-          description,
+          prompt,
           logo: logoUrl,
         }),
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Something went wrong");
-      else setStore(data);
+      else {
+        setStore(data);
+        setEditName(data.name || "");
+        setEditCategory(data.category || "");
+        setEditDescription(data.description || "");
+      }
     } catch (err) {
       console.error(err);
       alert("Request failed");
+    }
+    setLoading(false);
+  };
+
+  const handleUpdate = async () => {
+    if (!editName) return alert("Store name cannot be empty");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/store/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editName,
+          category: editCategory,
+          description: editDescription,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) alert(data.error || "Failed to update store");
+      else {
+        setStore(data);
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error updating store");
     }
     setLoading(false);
   };
@@ -136,34 +171,13 @@ export default function MerchantDashboard() {
             </div>
 
             <div className="space-y-4">
-              <Input
-                name="storeName"
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                placeholder="e.g. The Style Corner"
-                label="Store Name"
-              />
-
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full border px-3 py-2 mb-3"
-              >
-                <option value="">Select category</option>
-                {storeCategories.map((cat: any) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-
               <Textarea
-                name="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your store..."
-                label="Description"
-                rows={3}
+                name="prompt"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what kind of store you want to run. E.g., 'A modern vegan bakery selling gluten-free cakes and sourdough breads...'"
+                label="Store Description Prompt"
+                rows={4}
               />
 
               <Input
@@ -188,37 +202,79 @@ export default function MerchantDashboard() {
           <>
           {/* Store Info Card */}
           <Card padding="lg">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-                {store.name}
-              </h1>
-              {getStatusBadge(store.status || "deferred")}
-            </div>
-
-            <p className="text-gray-600">
-              Category: {getCategoryLabel(store.category)}
-            </p>
-
-            <p className="text-gray-600">Description: {store.description}</p>
-
-            <p className="text-gray-600 capitalize">Store Status: {store.status || "draft"}</p>
-
-            {store.status === "active" ? (
-              <Button
-                className="w-full mt-6 opacity-70 cursor-not-allowed"
-                disabled={true}
-                onClick={() => { }}
-              >
-                Store is Active
-              </Button>
+            {isEditing ? (
+              <div className="space-y-4 text-left mb-6">
+                <Input
+                  name="editName"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  label="Store Name"
+                />
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                  Category
+                </label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full border px-3 py-2 mb-3 rounded-md"
+                >
+                  <option value="">Select category</option>
+                  {storeCategories.map((cat: any) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+                <Textarea
+                  name="editDescription"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  label="Description"
+                  rows={3}
+                />
+                <div className="flex gap-2 justify-end mt-4">
+                  <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                  <Button onClick={handleUpdate} loading={loading}>Save</Button>
+                </div>
+              </div>
             ) : (
-              <Button
-                onClick={handlePublishStore}
-                className="w-full mt-6"
-                disabled={publishing}
-              >
-                {publishing ? "Publishing..." : "Publish Store"}
-              </Button>
+              <>
+                <div className="text-center mb-6">
+                  <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+                    {store.name}
+                  </h1>
+                  {getStatusBadge(store.status || "deferred")}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-gray-600 mb-1">
+                      <span className="font-semibold">Category:</span> {getCategoryLabel(store.category)}
+                    </p>
+                    <p className="text-gray-600 mb-1"><span className="font-semibold">Description:</span> {store.description}</p>
+                    <p className="text-gray-600 capitalize"><span className="font-semibold">Status:</span> {store.status || "draft"}</p>
+                  </div>
+                  <Button variant="ghost" onClick={() => setIsEditing(true)}>Edit Details</Button>
+                </div>
+
+                {store.status === "active" ? (
+                  <Button
+                    className="w-full mt-6 opacity-70 cursor-not-allowed"
+                    disabled={true}
+                    onClick={() => { }}
+                  >
+                    Store is Active
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handlePublishStore}
+                    className="w-full mt-6"
+                    disabled={publishing}
+                  >
+                    {publishing ? "Publishing..." : "Publish Store"}
+                  </Button>
+                )}
+              </>
             )}
           </Card>
           

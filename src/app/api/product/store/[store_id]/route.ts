@@ -6,15 +6,15 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
-    const value = params.value;
+    const store_id = params.store_id;
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/by-category/${value}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/store/${store_id}`);
     const data = await response.json();
 
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch products for category" },
+      { error: "Failed to fetch products for store" },
       { status: 500 }
     );
   }

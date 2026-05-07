@@ -13,8 +13,8 @@ export async function GET(req: Request) {
 
   try {
     const url = email
-      ? `${process.env.FASTAPI_URL}/admin/users?email=${encodeURIComponent(email)}`
-      : `${process.env.FASTAPI_URL}/admin/users`;
+      ? `${process.env.NEXT_PUBLIC_API_URL}/admin/users?email=${encodeURIComponent(email)}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/admin/users`;
 
     const response = await fetch(url);
     const data = await response.json();

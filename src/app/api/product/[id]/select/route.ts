@@ -9,7 +9,7 @@ export async function PATCH(
     const id = params.id;
     const token = req.cookies.get("token")?.value;
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/${id}/toggle-selection`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${id}/toggle-selection`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,

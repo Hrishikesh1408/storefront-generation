@@ -6,8 +6,8 @@ export async function GET(req: Request) {
 
   try {
     const url = name
-      ? `${process.env.FASTAPI_URL}/admin/stores?name=${encodeURIComponent(name)}`
-      : `${process.env.FASTAPI_URL}/admin/stores`;
+      ? `${process.env.NEXT_PUBLIC_API_URL}/admin/stores?name=${encodeURIComponent(name)}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/admin/stores`;
 
     const response = await fetch(url);
     const data = await response.json();

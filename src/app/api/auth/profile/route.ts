@@ -17,7 +17,7 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
 
-    const response = await fetch(`${process.env.FASTAPI_URL}/auth/profile`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
